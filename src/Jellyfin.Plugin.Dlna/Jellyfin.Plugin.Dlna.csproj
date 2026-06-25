@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <Nullable>enable</Nullable>
+        <AnalysisMode>AllEnabledByDefault</AnalysisMode>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="Jellyfin.Plugin.Dlna.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Jellyfin.Controller" Version="$(JellyfinApiVersion)" />
+      <PackageReference Include="Jellyfin.Model" Version="$(JellyfinApiVersion)" />
+      <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.11" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Jellyfin.Plugin.Dlna.Model\Jellyfin.Plugin.Dlna.Model.csproj" />
+        <ProjectReference Include="..\Jellyfin.Plugin.Dlna.Playback\Jellyfin.Plugin.Dlna.Playback.csproj" />
+        <ProjectReference Include="..\Rssdp\Rssdp.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Include="Configuration\config.html" />
+      <EmbeddedResource Include="Configuration\config.js" />
+      <EmbeddedResource Include="Images\*.jpg" />
+      <EmbeddedResource Include="Images\*.png" />
+      <EmbeddedResource Include="Profiles\Xml\*.xml" />
+    </ItemGroup>
+</Project>

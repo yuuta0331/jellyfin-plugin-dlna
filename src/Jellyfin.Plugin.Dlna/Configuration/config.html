@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DLNA</title>
+</head>
+<body>
+<div data-role="page" class="page type-interior pluginConfigurationPage esqConfigurationPage" data-controller="__plugin/dlnajs">
+    <div data-role="content">
+        <div class="content-primary">
+            <form id="dlnaForm" class="esqConfigurationForm">
+                <div class="sectionTitleContainer flex align-items-center">
+                    <h2 class="sectionTitle" data-i18n="TitleDlnaSettings">DLNA Settings</h2>
+                    <a is="emby-linkbutton" class="raised button-alt headerHelpButton emby-button" target="_blank" href="https://github.com/jellyfin/jellyfin-plugin-dlna" data-i18n="Help">${Help}</a>
+                </div>
+
+                <div is="emby-tabs" id="dlnaConfigTabs" class="emby-tabs focusable">
+                    <div class="emby-tabs-slider">
+                        <button type="button" is="emby-button" class="emby-tab-button emby-tab-button-active" data-index="0">
+                            <span data-i18n="TabGeneral">General</span>
+                        </button>
+                        <button type="button" is="emby-button" class="emby-tab-button" data-index="1">
+                            <span data-i18n="TabLibrary">Library</span>
+                        </button>
+                        <button type="button" is="emby-button" class="emby-tab-button" data-index="2">
+                            <span data-i18n="TabBrowse">Browse</span>
+                        </button>
+                        <button type="button" is="emby-button" class="emby-tab-button" data-index="3">
+                            <span data-i18n="TabIndex">Index</span>
+                        </button>
+                        <button type="button" is="emby-button" class="emby-tab-button" data-index="4">
+                            <span data-i18n="TabStorage">Storage</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab 0: General -->
+                <div class="tabContent is-active" data-index="0">
+                    <div class="verticalSection verticalSection-extrabottompadding">
+                        <h2 class="sectionTitle" data-i18n="SectionGeneral">General Settings</h2>
+                        <div class="fieldDescription" data-i18n="GeneralIndexStartupNote">
+                            Startup index rebuild can be configured on the Index tab.
+                        </div>
+
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="dlnaPlayTo" />
+                                <span data-i18n="EnablePlayTo">Enable Play To</span>
+                            </label>
+                        </div>
+                        <div class="fieldDescription" data-i18n="EnablePlayToHelp">
+                            Allows DLNA devices to remotely control playback on this server.
+                        </div>
+
+                        <div class="selectContainer">
+                            <select is="emby-select" id="dlnaSelectUser" label="Default User:"></select>
+                        </div>
+                        <div class="fieldDescription" data-i18n="DefaultUserHelp">
+                            User whose library is exposed when a DLNA client does not authenticate.
+                        </div>
+                    </div>
+
+                    <div class="verticalSection verticalSection-extrabottompadding">
+                        <h2 class="sectionTitle" data-i18n="SectionNetwork">SSDP / Network Settings</h2>
+
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="dlnaMatchedHost" />
+                                <span data-i18n="SendOnlyMatchedHost">Send only to matched host</span>
+                            </label>
+                        </div>
+                        <div class="fieldDescription" data-i18n="SendOnlyMatchedHostHelp">
+                            Restricts SSDP responses to clients on the same subnet as the server.
+                        </div>
+
+                        <div class="inputContainer">
+                            <input is="emby-input" type="text" id="dlnaDiscoveryInterval" label="Client Discovery Interval:" />
+                            <div class="fieldDescription" data-i18n="ClientDiscoveryIntervalHelp">
+                                The SSDP client discovery interval time in seconds.
+                            </div>
+                        </div>
+
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="dlnaBlastAlive" />
+                                <span data-i18n="BlastAliveMessages">Blast Alive Messages</span>
+                            </label>
+                        </div>
+                        <div class="fieldDescription" data-i18n="BlastAliveMessagesHelp">
+                            Sends multiple SSDP alive announcements at once when the server starts.
+                        </div>
+
+                        <div class="inputContainer">
+                            <input is="emby-input" type="text" id="dlnaAliveInterval" label="Alive Message Interval:" />
+                            <div class="fieldDescription" data-i18n="AliveMessageIntervalHelp">
+                                The frequency at which SSDP alive notifications are transmitted in seconds.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 1: Library -->
+                <div class="tabContent" data-index="1">
+                    <div class="verticalSection verticalSection-extrabottompadding">
+                        <h2 class="sectionTitle" data-i18n="SectionSeries">Series Settings</h2>
+
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableRecentlyAddedEpisodes" />
+                                <span data-i18n="EnableRecentlyAddedEpisodes">Enable Recently Added Episodes</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableRecentlyAddedSeries" />
+                                <span data-i18n="EnableRecentlyAddedSeries">Enable Recently Added Series</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableRecentlyReleasedEpisodes" />
+                                <span data-i18n="EnableRecentlyReleasedEpisodes">Enable Recently Released Episodes</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableRecentlyReleasedSeries" />
+                                <span data-i18n="EnableRecentlyReleasedSeries">Enable Recently Released Series</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableCurrentlyAiring" />
+                                <span data-i18n="EnableCurrentlyAiring">Enable Currently Airing</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableBrowseByKana" />
+                                <span data-i18n="EnableBrowseByKana">Enable Browse By Kana</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableKanaPrefixStripping" />
+                                <span data-i18n="EnableKanaPrefixStripping">Strip title prefixes for kana classification</span>
+                            </label>
+                        </div>
+                        <div class="inputContainer">
+                            <textarea is="emby-textarea" id="kanaTitlePrefixes" label="Kana Title Prefixes:" rows="5"></textarea>
+                            <div class="fieldDescription" data-i18n="KanaTitlePrefixesHelp">
+                                One prefix per line.
+                            </div>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableBrowseByYear" />
+                                <span data-i18n="EnableBrowseByYear">Enable Browse By Year</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="verticalSection verticalSection-extrabottompadding">
+                        <h2 class="sectionTitle" data-i18n="SectionMovies">Movie Settings</h2>
+
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableRecentlyAddedMovies" />
+                                <span data-i18n="EnableRecentlyAddedMovies">Enable Recently Added Movies</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableRecentlyReleasedMovies" />
+                                <span data-i18n="EnableRecentlyReleasedMovies">Enable Recently Released Movies</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableThreeDMovies" />
+                                <span data-plugin-i18n="EnableThreeDMovies">Enable 3D Movies Folder</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableAuto3DTagging" />
+                                <span data-plugin-i18n="EnableAuto3DTagging">Enable Auto 3D Tagging (for VR Auto-detection)</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableFourKMovies" />
+                                <span data-plugin-i18n="EnableFourKMovies">Enable 4K Movies Folder</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableEightKMovies" />
+                                <span data-plugin-i18n="EnableEightKMovies">Enable 8K Movies Folder</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableVrMovies" />
+                                <span data-plugin-i18n="EnableVrMovies">Enable VR Videos Folder</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableEightKVrMovies" />
+                                <span data-plugin-i18n="EnableEightKVrMovies">Enable 8K VR Videos Folder</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableAutoResolutionTagging" />
+                                <span data-plugin-i18n="EnableAutoResolutionTagging">Enable Auto Resolution Tagging (4K/8K)</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableAutoVrTagging" />
+                                <span data-plugin-i18n="EnableAutoVrTagging">Enable Auto VR Tagging (VR180/VR360)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="verticalSection verticalSection-extrabottompadding">
+                        <h2 class="sectionTitle" data-i18n="SectionExtras">Extras Settings</h2>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableExtras" />
+                                <span data-i18n="EnableExtras">Enable Extras (OP/ED & Bonus Features)</span>
+                            </label>
+                        </div>
+                        <div class="fieldDescription" data-i18n="EnableExtrasHelp">
+                            Shows bonus videos such as OP/ED and behind-the-scenes in a dedicated folder.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Browse -->
+                <div class="tabContent" data-index="2">
+                    <div class="verticalSection verticalSection-extrabottompadding">
+                        <h2 class="sectionTitle" data-i18n="SectionBrowseQuest">Quest Compatibility</h2>
+
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableQuestCompatibilityMode" />
+                                <span data-i18n="EnableQuestCompatibilityMode">Quest Compatibility Mode</span>
+                            </label>
+                        </div>
+                        <div class="fieldDescription" data-i18n="EnableQuestCompatibilityModeHelp">
+                            Optimizes for Quest DLNA players.
+                        </div>
+
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="ensurePlaybackUrlsInBrowse" />
+                                <span data-i18n="EnsurePlaybackUrlsInBrowse">Include playback URLs in browse listings</span>
+                            </label>
+                        </div>
+                        <div class="fieldDescription" data-i18n="EnsurePlaybackUrlsInBrowseHelp">
+                            Required for Quest playback. Adds video/audio stream URLs to indexed browse responses.
+                        </div>
+
+                        <div class="selectContainer">
+                            <select is="emby-select" id="childCountCalculation" label="Child Count Calculation:">
+                                <option value="Disabled">Disabled</option>
+                                <option value="Estimate">Estimate</option>
+                                <option value="Accurate">Accurate</option>
+                            </select>
+                        </div>
+                        <div class="fieldDescription" data-i18n="ChildCountCalculationHelp">
+                            Controls folder childCount attributes.
+                        </div>
+
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableChildCountCache" />
+                                <span data-i18n="EnableChildCountCache">Cache childCount values</span>
+                            </label>
+                        </div>
+                        <div class="fieldDescription" id="enableChildCountCacheHelp" data-i18n="EnableChildCountCacheHelp">
+                            Caches folder item counts to avoid repeated database queries.
+                        </div>
+                    </div>
+
+                    <div class="verticalSection verticalSection-extrabottompadding">
+                        <h2 class="sectionTitle" data-i18n="SectionBrowseCache">Response Caching</h2>
+
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableBrowseResponseCache" />
+                                <span data-i18n="EnableBrowseResponseCache">Cache Browse responses</span>
+                            </label>
+                        </div>
+                        <div class="fieldDescription" data-i18n="EnableBrowseResponseCacheHelp">
+                            Keeps generated Browse XML in memory for faster repeat access.
+                        </div>
+
+                        <div class="selectContainer">
+                            <select is="emby-select" id="browseResponseCacheTtlSeconds" label="Browse Cache TTL (seconds):">
+                                <option value="0">Until library update</option>
+                                <option value="60">60</option>
+                                <option value="300">300</option>
+                                <option value="900">900</option>
+                                <option value="3600">3600</option>
+                            </select>
+                        </div>
+                        <div class="fieldDescription" data-i18n="BrowseResponseCacheTtlSecondsHelp">
+                            How long Browse XML responses stay cached.
+                        </div>
+
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableItemSummaryBrowse" />
+                                <span data-i18n="EnableItemSummaryBrowse">Use item summaries for indexed browse (layer 2)</span>
+                            </label>
+                        </div>
+                        <div class="fieldDescription" data-i18n="EnableItemSummaryBrowseHelp">
+                            Uses pre-built item summaries from the index for faster folder listings.
+                        </div>
+
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableBrowseNodeCache" />
+                                <span data-i18n="EnableBrowseNodeCache">Cache browse child nodes (layer 3)</span>
+                            </label>
+                        </div>
+                        <div class="fieldDescription" data-i18n="EnableBrowseNodeCacheHelp">
+                            Caches the child item list under each folder.
+                        </div>
+
+                        <div class="selectContainer">
+                            <select is="emby-select" id="browseNodeCacheTtlSeconds" label="Browse Node Cache TTL (seconds):">
+                                <option value="0">Until library update</option>
+                                <option value="60">60</option>
+                                <option value="300">300</option>
+                                <option value="900">900</option>
+                            </select>
+                        </div>
+                        <div class="fieldDescription" data-i18n="BrowseNodeCacheTtlSecondsHelp">
+                            How long child folder lists stay cached in memory.
+                        </div>
+                    </div>
+
+                    <div class="verticalSection verticalSection-extrabottompadding">
+                        <h2 class="sectionTitle" data-i18n="SectionBrowseImages">Image Presentation</h2>
+
+                        <div class="selectContainer">
+                            <select is="emby-select" id="virtualListImagePresentation" label="Virtual List Image Style:">
+                                <option value="Poster">Poster</option>
+                                <option value="Thumbnail">Thumbnail</option>
+                            </select>
+                        </div>
+                        <div class="fieldDescription" data-i18n="VirtualListImagePresentationHelp">
+                            Image style for virtual folder lists.
+                        </div>
+
+                        <div class="selectContainer">
+                            <select is="emby-select" id="searchImagePresentation" label="Search Result Image Style:">
+                                <option value="Poster">Poster</option>
+                                <option value="Thumbnail">Thumbnail</option>
+                            </select>
+                        </div>
+                        <div class="fieldDescription" data-i18n="SearchImagePresentationHelp">
+                            Image style for DLNA search results.
+                        </div>
+
+                        <div class="selectContainer">
+                            <select is="emby-select" id="episodeListImageSource" label="Episode List Image Source:">
+                                <option value="Episode">Episode thumbnail</option>
+                                <option value="Series">Series thumbnail</option>
+                            </select>
+                        </div>
+                        <div class="fieldDescription" data-i18n="EpisodeListImageSourceHelp">
+                            Image source for recently added, recently released, favorite episodes, and similar lists.
+                        </div>
+                    </div>
+
+                    <div class="verticalSection verticalSection-extrabottompadding">
+                        <h2 class="sectionTitle" data-i18n="SectionBrowsePaging">Paging and Limits</h2>
+
+                        <div class="selectContainer">
+                            <select is="emby-select" id="maxBrowseItemsPerResponse" label="Max Browse Items Per Response:">
+                                <option value="10">10</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                                <option value="300">300</option>
+                                <option value="1000">1000</option>
+                            </select>
+                        </div>
+                        <div class="fieldDescription" data-i18n="MaxBrowseItemsPerResponseHelp">
+                            Maximum items returned in a single DLNA Browse response.
+                        </div>
+
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="respectRequestedCount" />
+                                <span data-i18n="RespectRequestedCount">Respect RequestedCount</span>
+                            </label>
+                        </div>
+                        <div class="fieldDescription" data-i18n="RespectRequestedCountHelp">
+                            When disabled, the full result set is returned.
+                        </div>
+
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableStrictTotalMatches" />
+                                <span data-i18n="EnableStrictTotalMatches">Return Strict TotalMatches</span>
+                            </label>
+                        </div>
+                        <div class="fieldDescription" data-i18n="EnableStrictTotalMatchesHelp">
+                            Returns accurate total item counts in DLNA Browse responses.
+                        </div>
+
+                        <div class="selectContainer">
+                            <select is="emby-select" id="maxRecentlyAddedItems" label="Max Recently Added Items:">
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                                <option value="300">300</option>
+                            </select>
+                        </div>
+                        <div class="fieldDescription" data-i18n="MaxRecentlyAddedItemsHelp">
+                            Maximum items shown in recently-added virtual folders.
+                        </div>
+
+                        <div class="selectContainer">
+                            <select is="emby-select" id="maxSeriesListItems" label="Max Series List Items:">
+                                <option value="0">Unlimited</option>
+                                <option value="500">500</option>
+                                <option value="1000">1000</option>
+                            </select>
+                        </div>
+                        <div class="fieldDescription" data-i18n="MaxSeriesListItemsHelp">
+                            Maximum series shown in the series list virtual folder.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 3: Index -->
+                <div class="tabContent" data-index="3">
+                    <div class="verticalSection verticalSection-extrabottompadding">
+                        <h2 class="sectionTitle" data-i18n="SectionIndexBasic">Index Basics</h2>
+
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableVirtualFolderIndex" />
+                                <span data-i18n="EnableVirtualFolderIndex">Enable virtual folder index</span>
+                            </label>
+                        </div>
+                        <div class="fieldDescription" data-i18n="EnableVirtualFolderIndexHelp">
+                            Builds a SQLite database for fast virtual folder browsing.
+                        </div>
+
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="warmupIndexOnStartup" />
+                                <span data-i18n="WarmupIndexOnStartup">Warm up index on startup</span>
+                            </label>
+                        </div>
+                        <div class="fieldDescription" data-i18n="WarmupIndexOnStartupHelp">
+                            Rebuilds the SQLite index database when Jellyfin starts. Turn off to skip startup rebuild until the first browse or a manual rebuild.
+                        </div>
+                    </div>
+
+                    <div class="verticalSection verticalSection-extrabottompadding">
+                        <h2 class="sectionTitle" data-i18n="SectionIndexPrewarm">Prewarm</h2>
+
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="prewarmBrowseResponses" />
+                                <span data-i18n="PrewarmBrowseResponses">Prewarm Browse XML after indexing</span>
+                            </label>
+                        </div>
+                        <div class="fieldDescription" data-i18n="PrewarmBrowseResponsesHelp">
+                            Pre-generates folder listing responses after indexing.
+                        </div>
+
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="prewarmFacetItemFolders" />
+                                <span data-i18n="PrewarmFacetItemFolders">Prewarm studio/tag/rating item folders</span>
+                            </label>
+                        </div>
+                        <div class="fieldDescription" data-i18n="PrewarmFacetItemFoldersHelp">
+                            Pre-generates listings for studio, tag, and rating subfolders.
+                        </div>
+
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="prewarmHierarchyFolders" />
+                                <span data-i18n="PrewarmHierarchyFolders">Prewarm series/season folders (limited)</span>
+                            </label>
+                        </div>
+                        <div class="fieldDescription" data-i18n="PrewarmHierarchyFoldersHelp">
+                            Pre-generates series and season folder listings with limits below.
+                        </div>
+
+                        <div class="inputContainer">
+                            <input is="emby-input" type="number" id="prewarmHierarchyMaxSeries" label="Prewarm max series:" />
+                            <div class="fieldDescription" data-i18n="PrewarmHierarchyMaxSeriesHelp">
+                                Maximum number of series folders to prewarm.
+                            </div>
+                        </div>
+
+                        <div class="inputContainer">
+                            <input is="emby-input" type="number" id="prewarmHierarchyMaxSeasonsPerSeries" label="Prewarm max seasons per series:" />
+                            <div class="fieldDescription" data-i18n="PrewarmHierarchyMaxSeasonsPerSeriesHelp">
+                                Maximum seasons per series to prewarm.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="verticalSection verticalSection-extrabottompadding">
+                        <h2 class="sectionTitle" data-i18n="SectionIndexTargets">Index Targets</h2>
+                        <div class="fieldDescription" data-i18n="SectionIndexTargetsHelp">
+                            Choose which library views are stored in the index database for fast DLNA browsing.
+                        </div>
+
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableIndexSeriesList" />
+                                <span data-i18n="EnableIndexSeriesList">Index full series list</span>
+                            </label>
+                        </div>
+                        <div class="fieldDescription" data-i18n="EnableIndexSeriesListHelp">Full series list per TV library.</div>
+
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableIndexMoviesList" />
+                                <span data-i18n="EnableIndexMoviesList">Index full movies list</span>
+                            </label>
+                        </div>
+                        <div class="fieldDescription" data-i18n="EnableIndexMoviesListHelp">Full movie list per movies library.</div>
+
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableIndexSeasonList" />
+                                <span data-i18n="EnableIndexSeasonList">Index seasons under series</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableIndexEpisodeList" />
+                                <span data-i18n="EnableIndexEpisodeList">Index episodes under seasons</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableIndexMusicGenre" />
+                                <span data-i18n="EnableIndexMusicGenre">Index music genres</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableIndexPerson" />
+                                <span data-i18n="EnableIndexPerson">Index persons (cast)</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableIndexRecentlyModifiedSeries" />
+                                <span data-i18n="EnableIndexRecentlyModifiedSeries">Index recently modified series</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableIndexRecentlyModifiedEpisodes" />
+                                <span data-i18n="EnableIndexRecentlyModifiedEpisodes">Index recently modified episodes</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableIndexRecentlyModifiedMovies" />
+                                <span data-i18n="EnableIndexRecentlyModifiedMovies">Index recently modified movies</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableIndexGenre" />
+                                <span data-i18n="EnableIndexGenre">Index genres</span>
+                            </label>
+                        </div>
+                        <div class="fieldDescription" data-i18n="EnableIndexGenreHelp">Genre folders without scanning the full library each time.</div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableIndexYear" />
+                                <span data-i18n="EnableIndexYear">Index production years</span>
+                            </label>
+                        </div>
+                        <div class="fieldDescription" data-i18n="EnableIndexYearHelp">Year-based browse folders.</div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableIndexRecentlyReleasedEpisodes" />
+                                <span data-i18n="EnableIndexRecentlyReleasedEpisodes">Index recently released episodes</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableIndexRecentlyReleasedSeries" />
+                                <span data-i18n="EnableIndexRecentlyReleasedSeries">Index recently released series</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableIndexRecentlyReleasedMovies" />
+                                <span data-i18n="EnableIndexRecentlyReleasedMovies">Index recently released movies</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="verticalSection verticalSection-extrabottompadding">
+                        <h2 class="sectionTitle" data-i18n="SectionIndexFolders">Browse Folders</h2>
+
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableRecentlyUpdatedSeries" />
+                                <span data-i18n="EnableRecentlyUpdatedSeries">Enable Recently Updated Series folder</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableBrowseByStudio" />
+                                <span data-i18n="EnableBrowseByStudio">Enable Browse By Studio</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableBrowseByTag" />
+                                <span data-i18n="EnableBrowseByTag">Enable Browse By Tag</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableBrowseByRating" />
+                                <span data-i18n="EnableBrowseByRating">Enable Browse By Rating</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableBrowseByPerson" />
+                                <span data-i18n="EnableBrowseByPerson">Enable Browse By Person</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableRecentlyModifiedSeries" />
+                                <span data-i18n="EnableRecentlyModifiedSeries">Recently Modified Series folder</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableRecentlyModifiedEpisodes" />
+                                <span data-i18n="EnableRecentlyModifiedEpisodes">Recently Modified Episodes folder</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableRecentlyModifiedMovies" />
+                                <span data-i18n="EnableRecentlyModifiedMovies">Recently Modified Movies folder</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="verticalSection verticalSection-extrabottompadding">
+                        <h2 class="sectionTitle" data-i18n="SectionIndexLibraryChanges">Library Changes</h2>
+
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="rebuildIndexAfterLibraryScan" />
+                                <span data-i18n="RebuildIndexAfterLibraryScan">Rebuild index after library changes</span>
+                            </label>
+                        </div>
+                        <div class="fieldDescription" data-i18n="RebuildIndexAfterLibraryScanHelp">
+                            Rebuilds the index when media libraries are updated.
+                        </div>
+
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="debounceLibraryChangeInvalidation" />
+                                <span data-i18n="DebounceLibraryChangeInvalidation">Debounce cache invalidation</span>
+                            </label>
+                        </div>
+                        <div class="fieldDescription" data-i18n="DebounceLibraryChangeInvalidationHelp">
+                            Waits before clearing caches during rapid library changes.
+                        </div>
+
+                        <div class="inputContainer">
+                            <input is="emby-input" type="number" id="libraryChangeDebounceSeconds" label="Library change debounce (seconds):" />
+                            <div class="fieldDescription" data-i18n="LibraryChangeDebounceSecondsHelp">
+                                Seconds to wait before invalidating caches after a library change.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="verticalSection verticalSection-extrabottompadding">
+                        <h2 class="sectionTitle" data-i18n="SectionIndexLargeFolders">Large Folder Splitting</h2>
+
+                        <div class="inputContainer">
+                            <input is="emby-input" type="number" id="largeFolderRangeSplitThreshold" label="Range split threshold:" />
+                            <div class="fieldDescription" data-i18n="LargeFolderRangeSplitThresholdHelp">
+                                Series count above which the list is split into range subfolders.
+                            </div>
+                        </div>
+
+                        <div class="inputContainer">
+                            <input is="emby-input" type="number" id="rangeFolderSize" label="Series per range folder:" />
+                            <div class="fieldDescription" data-i18n="RangeFolderSizeHelp">
+                                Number of series placed in each range subfolder.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 4: Storage -->
+                <div class="tabContent" data-index="4">
+                    <div class="verticalSection verticalSection-extrabottompadding">
+                        <h2 class="sectionTitle" data-i18n="SectionStorageUsage">Usage</h2>
+                        <div class="fieldDescription" data-i18n="SectionStorageHelp">
+                            View DLNA index and cache usage.
+                        </div>
+                        <div id="dlnaStorageStats" class="dlnaStorageStats"></div>
+                    </div>
+
+                    <div class="verticalSection verticalSection-extrabottompadding">
+                        <h2 class="sectionTitle" data-i18n="SectionStorageMaintenance">Maintenance</h2>
+
+                        <div class="buttonContainer">
+                            <button is="emby-button" type="button" id="dlnaRefreshStorageStats" class="raised button-submit block">
+                                <span data-i18n="RefreshStorageStats">Refresh statistics</span>
+                            </button>
+                        </div>
+                        <div class="fieldDescription" data-i18n="RefreshStorageStatsHelp">
+                            Reloads current index and cache statistics from the server.
+                        </div>
+
+                        <div class="buttonContainer">
+                            <button is="emby-button" type="button" id="dlnaClearBrowseCache" class="raised block">
+                                <span data-i18n="ClearBrowseCache">Clear Browse cache</span>
+                            </button>
+                        </div>
+                        <div class="fieldDescription" data-i18n="ClearBrowseCacheHelp">
+                            Clears in-memory Browse XML cache only.
+                        </div>
+
+                        <div class="buttonContainer">
+                            <button is="emby-button" type="button" id="dlnaClearIndex" class="raised block">
+                                <span data-i18n="ClearIndex">Clear index database</span>
+                            </button>
+                        </div>
+                        <div class="fieldDescription" data-i18n="ClearIndexHelp">
+                            Deletes the SQLite virtual index database file.
+                        </div>
+
+                        <div class="buttonContainer">
+                            <button is="emby-button" type="button" id="dlnaClearAllStorage" class="raised block">
+                                <span data-i18n="ClearAllStorage">Clear all caches and index</span>
+                            </button>
+                        </div>
+                        <div class="fieldDescription" data-i18n="ClearAllStorageHelp">
+                            Clears all caches and the index database.
+                        </div>
+
+                        <div class="buttonContainer">
+                            <button is="emby-button" type="button" id="dlnaRebuildIndex" class="raised block">
+                                <span data-i18n="RebuildIndex">Rebuild index</span>
+                            </button>
+                        </div>
+                        <div class="fieldDescription" data-i18n="RebuildIndexHelp">
+                            Rebuilds the virtual index in the background.
+                        </div>
+
+                        <div class="buttonContainer">
+                            <button is="emby-button" type="button" id="dlnaClearAndRebuild" class="raised block">
+                                <span data-i18n="ClearAndRebuild">Clear all and rebuild index</span>
+                            </button>
+                        </div>
+                        <div class="fieldDescription" data-i18n="ClearAndRebuildHelp">
+                            Clears everything then rebuilds the index in the background.
+                        </div>
+                    </div>
+
+                    <div class="verticalSection verticalSection-extrabottompadding">
+                        <h2 class="sectionTitle" data-i18n="SectionDebug">Advanced / Debug</h2>
+
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableDebugLogging" />
+                                <span data-i18n="EnableDebugLogging">Enable debug logging</span>
+                            </label>
+                        </div>
+                        <div class="fieldDescription" data-i18n="EnableDebugLoggingHelp">
+                            Emits verbose DLNA logs. Keep disabled in production.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="verticalSection verticalSection-extrabottompadding">
+                    <button is="emby-button" type="submit" data-theme="b" class="raised button-submit block">
+                        <span data-i18n="Save">${Save}</span>
+                    </button>
+                    <button is="emby-button" type="button" class="raised button-cancel block btnCancel" onclick="history.back();">
+                        <span data-i18n="Cancel">${ButtonCancel}</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>
