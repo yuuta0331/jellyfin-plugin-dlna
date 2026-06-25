@@ -1,0 +1,6 @@
+{
+  "jellyfin.exe": "C:\\Development\\jellyfin\\jellyfin\\jellyfin.exe",
+  "jellyfin.workingDir": "C:\\Development\\jellyfin\\jellyfin",
+  "jellyfin.dataDir": "C:\\Development\\jellyfin\\Z2SFF-SRV58_Testy\\data",
+  "jellyfin.cacheDir": "C:\\Development\\jellyfin\\Z2SFF-SRV58_Testy\\cache"
+}

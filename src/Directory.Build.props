@@ -1,0 +1,11 @@
+<Project>
+    <PropertyGroup>
+        <Version>0.0.0.0</Version>
+        <AssemblyVersion>0.0.0.0</AssemblyVersion>
+        <FileVersion>0.0.0.0</FileVersion>
+        <!-- Pin to the Jellyfin server version used in production.
+             Building against a newer Jellyfin package than the server causes load failures.
+             targetAbi in build.yaml declares the minimum supported server version separately. -->
+        <JellyfinApiVersion>10.11.10</JellyfinApiVersion>
+    </PropertyGroup>
+</Project>

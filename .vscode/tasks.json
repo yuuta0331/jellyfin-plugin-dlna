@@ -1,0 +1,189 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build-jellyfin-debug",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}\\scripts\\dev.ps1",
+        "build-jellyfin-debug"
+      ],
+      "group": "build",
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "publish-jellyfin-release",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}\\scripts\\dev.ps1",
+        "publish-jellyfin-release"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "publish-jellyfin-compat-matrix",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}\\scripts\\dev.ps1",
+        "publish-jellyfin-compat-matrix"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "package-jellyfin-release",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}\\scripts\\dev.ps1",
+        "package-jellyfin-release"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "release-jellyfin-plugin",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}\\scripts\\dev.ps1",
+        "release-jellyfin-plugin"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "release-and-deploy-jellyfin",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "release-jellyfin-plugin",
+        "stop-jellyfin",
+        "deploy-jellyfin-release",
+        "run-jellyfin"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "open-release-folder",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}\\scripts\\dev.ps1",
+        "open-release-folder"
+      ]
+    },
+    {
+      "label": "deploy-jellyfin-debug",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}\\scripts\\dev.ps1",
+        "deploy-jellyfin-debug"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "deploy-jellyfin-release",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}\\scripts\\dev.ps1",
+        "deploy-jellyfin-release"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "stop-jellyfin",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}\\scripts\\dev.ps1",
+        "stop-jellyfin"
+      ]
+    },
+    {
+      "label": "run-jellyfin",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}\\scripts\\dev.ps1",
+        "run-jellyfin"
+      ]
+    },
+    {
+      "label": "restart-jellyfin",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "stop-jellyfin",
+        "deploy-jellyfin-debug",
+        "run-jellyfin"
+      ]
+    },
+    {
+      "label": "prepare-launch-jellyfin",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "stop-jellyfin",
+        "build-jellyfin-debug",
+        "deploy-jellyfin-debug"
+      ]
+    },
+    {
+      "label": "open-jellyfin-log",
+      "type": "shell",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}\\scripts\\dev.ps1",
+        "open-jellyfin-log"
+      ]
+    }
+  ]
+}

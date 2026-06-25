@@ -1,0 +1,29 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Jellyfin",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "prepare-launch-jellyfin",
+      "program": "${config:jellyfin.exe}",
+      "args": [
+        "--datadir",
+        "${config:jellyfin.dataDir}",
+        "--cachedir",
+        "${config:jellyfin.cacheDir}"
+      ],
+      "cwd": "${config:jellyfin.workingDir}",
+      "console": "integratedTerminal",
+      "stopAtEntry": false,
+      "justMyCode": false
+    },
+    {
+      "name": "Attach To Jellyfin",
+      "type": "coreclr",
+      "request": "attach",
+      "processId": "${command:pickProcess}",
+      "justMyCode": false
+    }
+  ]
+}

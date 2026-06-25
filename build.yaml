@@ -1,0 +1,29 @@
+name: "DLNA"
+guid: "33EBA9CD-7DA1-4720-967F-DD7DAE7B74A1"
+imageUrl: ""
+version: 12
+targetAbi: "10.11.0.0"
+framework: "net9.0"
+owner: "yuuta0331"
+overview: "DLNA Service"
+description: >
+  Adds DLNA capability to Jellyfin
+
+category: "General"
+artifacts:
+  - "Jellyfin.Plugin.Dlna.dll"
+  - "Jellyfin.Plugin.Dlna.Model.dll"
+  - "Jellyfin.Plugin.Dlna.Playback.dll"
+  - "Rssdp.dll"
+changelog: |-
+  - Fork release with GitHub Pages plugin repository and automated CI/CD publishing
+  - Fix Meta Quest 3 DLNA playback when indexed browse omits stream URLs
+  - Add episode list image source setting and improve startup index UI
+  - Fix DLNA Browse cache reliability and restore thumbnail performance
+  - Reorganize DLNA settings UI into tabbed layout with clearer help text
+  - Add DLNA browse poster/thumbnail display for virtual folder lists
+  - Add virtual folders for mixed, home videos, and music video libraries
+  - Add SQLite virtual folder indexes and layered browse caches for performance
+  - Add Browse By Kana classification, paging settings, and Quest compatibility mode
+  - Add 3D, 4K, 8K, and VR video support
+  - Pin Jellyfin API packages to 10.11.10 for Jellyfin 10.11.x compatibility
