@@ -1,7 +1,7 @@
 # Configuration for Release Drafter: https://github.com/release-drafter/release-drafter
-name-template: 'Version $NEXT_MAJOR_VERSION'
-tag-template: 'v$NEXT_MAJOR_VERSION'
-version-template: '$MAJOR'
+name-template: 'v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+version-template: '$MAJOR.$MINOR.$PATCH'
 category-template: '### $TITLE'
 
 categories:
