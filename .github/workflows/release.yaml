@@ -2,6 +2,9 @@ name: '📦 Release Plugin'
 
 on:
   workflow_dispatch:
+  push:
+    tags:
+      - 'v*.*.*'
   release:
     types:
       - published
@@ -16,6 +19,7 @@ jobs:
     outputs:
       version: ${{ steps.meta.outputs.version }}
       tag: ${{ steps.meta.outputs.tag }}
+      publish_release: ${{ steps.meta.outputs.publish_release }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -23,16 +27,21 @@ jobs:
       - name: Read plugin metadata
         id: meta
         run: |-
-          VERSION=$(grep '^version:' build.yaml | awk '{print $2}')
+          VERSION=$(grep '^version:' build.yaml | awk '{print $2}' | tr -d '"')
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           if [ "${{ github.event_name }}" = "release" ]; then
             echo "tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+            echo "publish_release=false" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+            echo "publish_release=true" >> "$GITHUB_OUTPUT"
           else
             echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
+            echo "publish_release=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Generate release notes from build.yaml
-        if: github.event_name == 'workflow_dispatch'
+        if: steps.meta.outputs.publish_release == 'true'
         run: |-
           {
             echo "## What's New"
@@ -47,7 +56,7 @@ jobs:
           } > release-body.md
 
       - name: Upload release notes
-        if: github.event_name == 'workflow_dispatch'
+        if: steps.meta.outputs.publish_release == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: release-body
@@ -74,7 +83,7 @@ jobs:
           name: build-artifact
 
       - name: Download release notes
-        if: github.event_name == 'workflow_dispatch'
+        if: needs.prepare.outputs.publish_release == 'true'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: release-body
@@ -89,11 +98,11 @@ jobs:
           ls -la
 
       - name: Publish GitHub Release with assets
-        if: github.event_name == 'workflow_dispatch'
+        if: needs.prepare.outputs.publish_release == 'true'
         uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631 # v2.2.2
         with:
           tag_name: ${{ needs.prepare.outputs.tag }}
-          name: v${{ needs.prepare.outputs.version }}
+          name: ${{ needs.prepare.outputs.tag }}
           body_path: release-body.md
           files: |
             ./*.zip
@@ -104,7 +113,7 @@ jobs:
           make_latest: true
 
       - name: Upload assets to existing GitHub Release
-        if: github.event_name == 'release'
+        if: needs.prepare.outputs.publish_release == 'false'
         uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631 # v2.2.2
         with:
           tag_name: ${{ needs.prepare.outputs.tag }}
