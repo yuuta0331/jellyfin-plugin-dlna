@@ -352,36 +352,46 @@ internal sealed class DlnaIndexBuilder
         IReadOnlyList<BaseItem> movieItems,
         DlnaPluginConfiguration config)
     {
-        var options = KanaClassificationOptions.FromConfiguration(config);
-        BuildKanaForType(libraryId, BaseItemKind.Series, seriesItems, options);
-        BuildKanaForType(libraryId, BaseItemKind.Movie, movieItems, options);
+        var options = TitleBrowseOptions.FromConfiguration(config, libraryId);
+        BuildTitleBrowseForType(libraryId, BaseItemKind.Series, seriesItems, options);
+        BuildTitleBrowseForType(libraryId, BaseItemKind.Movie, movieItems, options);
     }
 
-    private void BuildKanaForType(
+    private void BuildTitleBrowseForType(
         Guid libraryId,
         BaseItemKind itemType,
         IReadOnlyList<BaseItem> items,
-        KanaClassificationOptions options)
+        TitleBrowseOptions options)
     {
         var sortNames = items.ToDictionary(i => i.Id, i => i.SortName ?? i.Name ?? string.Empty);
-        var buckets = new List<Guid>[KanaRowHelper.RowCount];
-        for (var i = 0; i < buckets.Length; i++)
-        {
-            buckets[i] = [];
-        }
+        var buckets = options.Groups.ToDictionary(
+            g => g.Id,
+            _ => new List<Guid>(),
+            StringComparer.Ordinal);
 
         foreach (var item in items)
         {
-            var row = KanaRowHelper.Classify(item.SortName, item.Name, options);
-            buckets[row].Add(item.Id);
+            var groupId = TitleBrowseHelper.Classify(item.SortName, item.Name, options);
+            if (!buckets.TryGetValue(groupId, out var bucket))
+            {
+                bucket = [];
+                buckets[groupId] = bucket;
+            }
+
+            bucket.Add(item.Id);
         }
 
-        for (var rowIndex = 0; rowIndex < KanaRowHelper.RowCount; rowIndex++)
+        foreach (var group in options.Groups)
         {
-            var ids = buckets[rowIndex]
+            if (!buckets.TryGetValue(group.Id, out var ids))
+            {
+                ids = [];
+            }
+
+            var ordered = ids
                 .OrderBy(id => sortNames[id], StringComparer.OrdinalIgnoreCase)
                 .ToList();
-            _store.ReplaceKanaRow(libraryId, itemType, rowIndex, ids);
+            _store.ReplaceTitleBrowseGroup(libraryId, itemType, group.Id, ordered);
         }
     }
 

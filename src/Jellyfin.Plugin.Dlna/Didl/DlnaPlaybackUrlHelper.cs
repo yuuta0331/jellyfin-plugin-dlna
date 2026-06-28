@@ -36,7 +36,9 @@ public static class DlnaPlaybackUrlHelper
             return url;
         }
 
-        return url + "&dlnaheaders=true";
+        return url.Contains('?', StringComparison.Ordinal)
+            ? url + "&dlnaheaders=true"
+            : url + "?dlnaheaders=true";
     }
 
     /// <summary>

@@ -26,6 +26,16 @@ public class DidlPlaybackResourceTests
     }
 
     [Fact]
+    public void NormalizeDlnaMediaUrl_NonQuestBareUrl_AddsQuestionMarkBeforeDlnaHeaders()
+    {
+        var url = "http://server/dlna/videos/abc/stream.mp4";
+
+        var result = DlnaPlaybackUrlHelper.NormalizeDlnaMediaUrl(url, questCompatibilityMode: false);
+
+        Assert.Equal("http://server/dlna/videos/abc/stream.mp4?dlnaheaders=true", result);
+    }
+
+    [Fact]
     public void NormalizeDlnaMediaUrl_NonQuest_AddsDlnaHeaders()
     {
         var url = "http://server/dlna/videos/abc/stream.mp4?Static=true";

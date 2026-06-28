@@ -45,10 +45,15 @@ public class DlnaPlugin : BasePlugin<DlnaPluginConfiguration>, IHasWebPages
     /// <inheritdoc />
     public override void UpdateConfiguration(BasePluginConfiguration configuration)
     {
-        base.UpdateConfiguration(configuration);
         if (configuration is DlnaPluginConfiguration dlnaConfiguration)
         {
-            DlnaDebugLoggingState.Current?.SyncFrom(dlnaConfiguration);
+            TitleBrowseConfigurationHelper.EnsurePresetsSeeded(dlnaConfiguration);
+        }
+
+        base.UpdateConfiguration(configuration);
+        if (configuration is DlnaPluginConfiguration updatedConfiguration)
+        {
+            DlnaDebugLoggingState.Current?.SyncFrom(updatedConfiguration);
         }
 
         ConfigurationUpdated?.Invoke(this, EventArgs.Empty);

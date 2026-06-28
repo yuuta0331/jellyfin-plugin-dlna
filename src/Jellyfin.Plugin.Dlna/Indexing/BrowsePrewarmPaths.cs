@@ -89,9 +89,10 @@ internal static class BrowsePrewarmPaths
         if (config.EnableBrowseByKana)
         {
             ids.Add(DidlBuilder.GetClientId(libraryId, StubType.BrowseByKana));
-            for (var row = 0; row < 10; row++)
+            var preset = TitleBrowseConfigurationHelper.ResolvePreset(config, libraryId);
+            foreach (var group in preset.Groups)
             {
-                ids.Add(DidlBuilder.GetKanaRowClientId(libraryId, row));
+                ids.Add(DidlBuilder.GetTitleBrowseGroupClientId(libraryId, group.Id));
             }
         }
 

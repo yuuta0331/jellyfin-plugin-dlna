@@ -2,7 +2,8 @@ const DlnaConfigurationPage = {
     pluginUniqueId: '33EBA9CD-7DA1-4720-967F-DD7DAE7B74A1',
     defaultDiscoveryInterval: 60,
     defaultAliveInterval: 180,
-    defaultKanaTitlePrefixes: '劇場版\n映画\nOVA\nTV\n特撮',
+    defaultTitleBrowsePresetId: 'alphabet',
+    libraryTitleBrowseOverrides: [],
     storageTabIndex: 4,
     translations: {
         'en': {
@@ -34,10 +35,18 @@ const DlnaConfigurationPage = {
             'EnableRecentlyReleasedEpisodes': 'Enable Recently Released Episodes',
             'EnableRecentlyReleasedSeries': 'Enable Recently Released Series',
             'EnableCurrentlyAiring': 'Enable Currently Airing',
-            'EnableBrowseByKana': 'Enable Browse By Kana',
-            'EnableKanaPrefixStripping': 'Strip title prefixes for kana classification',
-            'KanaTitlePrefixes': 'Kana Title Prefixes:',
-            'KanaTitlePrefixesHelp': 'One prefix per line. Matching prefixes at the start of a title are removed before kana row classification.',
+            'EnableBrowseByKana': 'Enable Browse By Title',
+            'ActiveTitleBrowsePresetId': 'Active Title Browse Preset:',
+            'ActiveTitleBrowsePresetIdHelp': 'Choose the default grouping preset for title browse folders (A-Z, Japanese kana, or custom).',
+            'HideEmptyVirtualFolders': 'Hide empty virtual folders',
+            'TitleBrowsePresetsJson': 'Title Browse Presets (JSON):',
+            'TitleBrowsePresetsJsonHelp': 'Advanced: edit preset definitions as JSON. Built-in alphabet and Japanese kana presets are preserved on save.',
+            'SectionLibraryTitleBrowse': 'Per-Library Title Browse',
+            'LibraryTitleBrowseLibraryId': 'Library:',
+            'LibraryTitleBrowsePresetOverride': 'Preset Override:',
+            'LibraryTitleStripRegexes': 'Title Strip Regexes:',
+            'LibraryTitleStripRegexesHelp': 'One regex per line. Matched prefixes are removed before classification for the selected library.',
+            'LibraryTitleBrowseUseGlobal': '(Use global preset)',
             'EnableBrowseByYear': 'Enable Browse By Year',
             'SectionMovies': 'Movie Settings',
             'EnableRecentlyAddedMovies': 'Enable Recently Added Movies',
@@ -249,10 +258,18 @@ const DlnaConfigurationPage = {
             'EnableRecentlyReleasedEpisodes': '「最近リリースされたエピソード」フォルダを有効にする',
             'EnableRecentlyReleasedSeries': '「最近リリースされたシリーズ」フォルダを有効にする',
             'EnableCurrentlyAiring': '「放送中」フォルダを有効にする',
-            'EnableBrowseByKana': '「五十音」フォルダを有効にする',
-            'EnableKanaPrefixStripping': '五十音分類時にタイトル接頭辞を除外する',
-            'KanaTitlePrefixes': '除外する接頭辞:',
-            'KanaTitlePrefixesHelp': '1行に1つずつ入力します。タイトル先頭に一致する接頭辞を除去してから五十音行へ分類します。',
+            'EnableBrowseByKana': '「頭文字別」フォルダを有効にする',
+            'ActiveTitleBrowsePresetId': '頭文字分類プリセット:',
+            'ActiveTitleBrowsePresetIdHelp': '頭文字別フォルダの既定グループ（A-Z、日本語五十音、カスタム）を選択します。',
+            'HideEmptyVirtualFolders': '空の仮想フォルダを非表示にする',
+            'TitleBrowsePresetsJson': '頭文字分類プリセット (JSON):',
+            'TitleBrowsePresetsJsonHelp': '上級者向け: プリセット定義を JSON で編集します。組み込みのアルファベット・日本語五十音プリセットは保存時に維持されます。',
+            'SectionLibraryTitleBrowse': 'ライブラリ別頭文字分類',
+            'LibraryTitleBrowseLibraryId': 'ライブラリ:',
+            'LibraryTitleBrowsePresetOverride': 'プリセット上書き:',
+            'LibraryTitleStripRegexes': 'タイトル除去正規表現:',
+            'LibraryTitleStripRegexesHelp': '1行に1つの正規表現。選択したライブラリで分類前に一致した接頭辞を除去します。',
+            'LibraryTitleBrowseUseGlobal': '（グローバルプリセットを使用）',
             'EnableBrowseByYear': '「年別」フォルダを有効にする',
             'SectionMovies': '映画設定',
             'EnableRecentlyAddedMovies': '「最近追加された映画」フォルダを有効にする',
@@ -550,7 +567,11 @@ const DlnaConfigurationPage = {
             { id: 'rangeFolderSize', key: 'RangeFolderSize' },
             { id: 'prewarmHierarchyMaxSeries', key: 'PrewarmHierarchyMaxSeries' },
             { id: 'prewarmHierarchyMaxSeasonsPerSeries', key: 'PrewarmHierarchyMaxSeasonsPerSeries' },
-            { id: 'kanaTitlePrefixes', key: 'KanaTitlePrefixes' }
+            { id: 'activeTitleBrowsePresetId', key: 'ActiveTitleBrowsePresetId' },
+            { id: 'titleBrowsePresetsJson', key: 'TitleBrowsePresetsJson' },
+            { id: 'libraryTitleBrowseLibraryId', key: 'LibraryTitleBrowseLibraryId' },
+            { id: 'libraryTitleBrowsePresetOverride', key: 'LibraryTitleBrowsePresetOverride' },
+            { id: 'libraryTitleStripRegexes', key: 'LibraryTitleStripRegexes' }
         ];
 
         inputsToTranslate.forEach(function(item) {
@@ -923,8 +944,12 @@ const DlnaConfigurationPage = {
                 page.querySelector('#enableRecentlyReleasedSeries').checked = config.EnableRecentlyReleasedSeries !== false;
                 page.querySelector('#enableCurrentlyAiring').checked = config.EnableCurrentlyAiring !== false;
                 page.querySelector('#enableBrowseByKana').checked = config.EnableBrowseByKana !== false;
-                page.querySelector('#enableKanaPrefixStripping').checked = config.EnableKanaPrefixStripping !== false;
-                page.querySelector('#kanaTitlePrefixes').value = DlnaConfigurationPage.formatKanaTitlePrefixes(config.KanaTitlePrefixes);
+                DlnaConfigurationPage.libraryTitleBrowseOverrides = config.LibraryTitleBrowseOverrides || [];
+                DlnaConfigurationPage.populateTitleBrowsePresetOptions(page, config);
+                page.querySelector('#activeTitleBrowsePresetId').value = config.ActiveTitleBrowsePresetId || DlnaConfigurationPage.defaultTitleBrowsePresetId;
+                page.querySelector('#hideEmptyVirtualFolders').checked = config.HideEmptyVirtualFolders === true;
+                page.querySelector('#titleBrowsePresetsJson').value = DlnaConfigurationPage.formatTitleBrowsePresetsJson(config.TitleBrowsePresets);
+                DlnaConfigurationPage.populateLibraryTitleBrowseOptions(page, config);
                 page.querySelector('#enableBrowseByYear').checked = config.EnableBrowseByYear !== false;
                 page.querySelector('#enableRecentlyAddedMovies').checked = config.EnableRecentlyAddedMovies;
                 page.querySelector('#enableRecentlyReleasedMovies').checked = config.EnableRecentlyReleasedMovies;
@@ -1011,6 +1036,10 @@ const DlnaConfigurationPage = {
                     .finally(function() {
                         Dashboard.hideLoadingMsg();
                     });
+            })
+            .catch(function(err) {
+                console.error('[DLNA] Failed to load plugin configuration', err);
+                Dashboard.hideLoadingMsg();
             });
     },
     populateUsers: function(page, users, selectedId) {
@@ -1026,22 +1055,117 @@ const DlnaConfigurationPage = {
         page.querySelector('#dlnaSelectUser').innerHTML = html;
         page.querySelector('#dlnaSelectUser').value = selectedId;
     },
-    formatKanaTitlePrefixes: function(prefixes) {
-        if (!prefixes || !prefixes.length) {
-            return DlnaConfigurationPage.defaultKanaTitlePrefixes;
+    formatTitleBrowsePresetsJson: function(presets) {
+        try {
+            return JSON.stringify(presets || [], null, 2);
+        } catch (e) {
+            return '[]';
         }
-
-        return prefixes.join('\n');
     },
-    parseKanaTitlePrefixes: function(value) {
-        if (!value) {
-            return DlnaConfigurationPage.defaultKanaTitlePrefixes.split('\n');
+    parseTitleBrowsePresetsJson: function(value) {
+        if (!value || !value.trim()) {
+            return [];
         }
 
-        return value
+        return JSON.parse(value);
+    },
+    populateTitleBrowsePresetOptions: function(page, config) {
+        const presets = (config.TitleBrowsePresets && config.TitleBrowsePresets.length)
+            ? config.TitleBrowsePresets
+            : DlnaConfigurationPage.getDefaultTitleBrowsePresets();
+        const activeSelect = page.querySelector('#activeTitleBrowsePresetId');
+        const overrideSelect = page.querySelector('#libraryTitleBrowsePresetOverride');
+        if (!activeSelect || !overrideSelect) {
+            return;
+        }
+
+        const isJa = DlnaConfigurationPage.getLanguage().startsWith('ja');
+        let html = '';
+
+        for (let i = 0; i < presets.length; i++) {
+            const preset = presets[i];
+            const label = isJa ? (preset.NameJa || preset.Id) : (preset.NameEn || preset.Id);
+            html += '<option value="' + preset.Id + '">' + label + '</option>';
+        }
+
+        activeSelect.innerHTML = html;
+        const dict = DlnaConfigurationPage.getDictionary(page);
+        overrideSelect.innerHTML = '<option value="">' + (dict['LibraryTitleBrowseUseGlobal'] || '(Use global preset)') + '</option>' + html;
+    },
+    getDefaultTitleBrowsePresets: function() {
+        return [
+            { Id: 'alphabet', NameJa: 'アルファベット', NameEn: 'Alphabet' },
+            { Id: 'japanese-kana', NameJa: '日本語五十音', NameEn: 'Japanese Kana' }
+        ];
+    },
+    populateLibraryTitleBrowseOptions: function(page, config) {
+        const select = page.querySelector('#libraryTitleBrowseLibraryId');
+        if (!select) {
+            return;
+        }
+
+        const dict = DlnaConfigurationPage.getDictionary(page);
+
+        ApiClient.getJSON(ApiClient.getUrl('Library/VirtualFolders')).then(function(libraries) {
+            let html = '<option value="">' + (dict['None'] || '(None)') + '</option>';
+            for (let i = 0; i < libraries.length; i++) {
+                const library = libraries[i];
+                html += '<option value="' + library.ItemId + '">' + library.Name + '</option>';
+            }
+
+            select.innerHTML = html;
+            select.onchange = function() {
+                DlnaConfigurationPage.loadLibraryTitleBrowseOverride(page);
+            };
+            DlnaConfigurationPage.loadLibraryTitleBrowseOverride(page);
+        }).catch(function() {
+            select.innerHTML = '<option value="">' + (dict['None'] || '(None)') + '</option>';
+        });
+    },
+    loadLibraryTitleBrowseOverride: function(page) {
+        const librarySelect = page.querySelector('#libraryTitleBrowseLibraryId');
+        const presetOverrideSelect = page.querySelector('#libraryTitleBrowsePresetOverride');
+        const regexField = page.querySelector('#libraryTitleStripRegexes');
+        if (!librarySelect || !presetOverrideSelect || !regexField) {
+            return;
+        }
+
+        const libraryId = librarySelect.value;
+        const override = (DlnaConfigurationPage.libraryTitleBrowseOverrides || []).find(function(entry) {
+            return entry.LibraryId === libraryId;
+        });
+
+        presetOverrideSelect.value = override && override.PresetId ? override.PresetId : '';
+        regexField.value = override && override.TitleStripRegexes
+            ? override.TitleStripRegexes.join('\n')
+            : '';
+    },
+    saveLibraryTitleBrowseOverride: function(page) {
+        const libraryId = page.querySelector('#libraryTitleBrowseLibraryId').value;
+        if (!libraryId) {
+            return;
+        }
+
+        const presetId = page.querySelector('#libraryTitleBrowsePresetOverride').value || null;
+        const regexValue = page.querySelector('#libraryTitleStripRegexes').value || '';
+        const regexes = regexValue
             .split(/\r?\n/)
             .map(function(line) { return line.trim(); })
             .filter(function(line) { return line.length > 0; });
+
+        const overrides = (DlnaConfigurationPage.libraryTitleBrowseOverrides || []).filter(function(entry) {
+            return entry.LibraryId !== libraryId;
+        });
+
+        if (presetId || regexes.length > 0) {
+            overrides.push({
+                LibraryId: libraryId,
+                PresetId: presetId,
+                TitleStripRegexes: regexes
+            });
+        }
+
+        DlnaConfigurationPage.libraryTitleBrowseOverrides = overrides;
     },
     save: function(page) {
         Dashboard.showLoadingMsg();
@@ -1059,8 +1183,20 @@ const DlnaConfigurationPage = {
                     config.EnableRecentlyReleasedSeries = page.querySelector('#enableRecentlyReleasedSeries').checked;
                     config.EnableCurrentlyAiring = page.querySelector('#enableCurrentlyAiring').checked;
                     config.EnableBrowseByKana = page.querySelector('#enableBrowseByKana').checked;
-                    config.EnableKanaPrefixStripping = page.querySelector('#enableKanaPrefixStripping').checked;
-                    config.KanaTitlePrefixes = DlnaConfigurationPage.parseKanaTitlePrefixes(page.querySelector('#kanaTitlePrefixes').value);
+                    DlnaConfigurationPage.saveLibraryTitleBrowseOverride(page);
+                    config.ActiveTitleBrowsePresetId = page.querySelector('#activeTitleBrowsePresetId').value || DlnaConfigurationPage.defaultTitleBrowsePresetId;
+                    config.HideEmptyVirtualFolders = page.querySelector('#hideEmptyVirtualFolders').checked;
+                    try {
+                        const parsedPresets = DlnaConfigurationPage.parseTitleBrowsePresetsJson(page.querySelector('#titleBrowsePresetsJson').value);
+                        if (parsedPresets && parsedPresets.length) {
+                            config.TitleBrowsePresets = parsedPresets;
+                        }
+                    } catch (e) {
+                        Dashboard.alert('Invalid title browse presets JSON.');
+                        Dashboard.hideLoadingMsg();
+                        return;
+                    }
+                    config.LibraryTitleBrowseOverrides = DlnaConfigurationPage.libraryTitleBrowseOverrides || [];
                     config.EnableBrowseByYear = page.querySelector('#enableBrowseByYear').checked;
                     config.EnableRecentlyAddedMovies = page.querySelector('#enableRecentlyAddedMovies').checked;
                     config.EnableRecentlyReleasedMovies = page.querySelector('#enableRecentlyReleasedMovies').checked;

@@ -97,7 +97,7 @@ public class LibraryBrowseQueryHelperTests
         var store = new StubIndexStore(library.Id);
         var indexService = new StubIndexService(library.Id, ready: false);
 
-        var items = MixedLibraryBrowseHelper.BuildMixedRootFolderList(config, library, store, indexService);
+        var items = MixedLibraryBrowseHelper.BuildMixedRootFolderList(config, library, store, indexService, null, null);
 
         Assert.Contains(items, i => i.StubType == StubType.Series);
         Assert.Contains(items, i => i.StubType == StubType.Movies);
@@ -203,6 +203,16 @@ public class LibraryBrowseQueryHelperTests
         }
 
         public IReadOnlyList<Guid> GetVirtualList(Guid libraryId, VirtualListType listType) => [];
+
+        public int GetVirtualListCount(Guid libraryId, VirtualListType listType) => 0;
+
+        public void ReplaceTitleBrowseGroup(Guid libraryId, BaseItemKind itemType, string groupId, IReadOnlyList<Guid> itemIds)
+        {
+        }
+
+        public IReadOnlyList<Guid> GetTitleBrowseGroup(Guid libraryId, BaseItemKind itemType, string groupId) => [];
+
+        public IReadOnlyList<TitleBrowseGroupCount> GetTitleBrowseGroupCounts(Guid libraryId, BaseItemKind itemType) => [];
 
         public void ReplaceKanaRow(Guid libraryId, BaseItemKind itemType, int rowIndex, IReadOnlyList<Guid> itemIds)
         {

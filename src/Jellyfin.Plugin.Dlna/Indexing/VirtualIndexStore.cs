@@ -260,12 +260,54 @@ public sealed class VirtualIndexStore : IVirtualIndexStore, IDisposable
         => GetOrderedList("virtual_list", libraryId, listType.ToString(), null, null);
 
     /// <inheritdoc />
-    public void ReplaceKanaRow(Guid libraryId, BaseItemKind itemType, int rowIndex, IReadOnlyList<Guid> itemIds)
-        => ReplaceOrderedList("kana_row", libraryId, itemType.ToString(), rowIndex.ToString(CultureInfo.InvariantCulture), null, itemIds);
+    public void ReplaceTitleBrowseGroup(Guid libraryId, BaseItemKind itemType, string groupId, IReadOnlyList<Guid> itemIds)
+        => ReplaceOrderedList("kana_row", libraryId, itemType.ToString(), groupId, null, itemIds);
 
     /// <inheritdoc />
+    public IReadOnlyList<Guid> GetTitleBrowseGroup(Guid libraryId, BaseItemKind itemType, string groupId)
+        => GetOrderedList("kana_row", libraryId, itemType.ToString(), groupId, null);
+
+    /// <inheritdoc />
+    public IReadOnlyList<TitleBrowseGroupCount> GetTitleBrowseGroupCounts(Guid libraryId, BaseItemKind itemType)
+    {
+        var library = libraryId.ToString("N", CultureInfo.InvariantCulture);
+        var results = new List<TitleBrowseGroupCount>();
+        lock (_lock)
+        {
+            using var connection = OpenConnection();
+            using var command = connection.CreateCommand();
+            command.CommandText = """
+                SELECT row_index, COUNT(*) AS item_count
+                FROM kana_row
+                WHERE library_id = $library_id AND item_type = $item_type
+                GROUP BY row_index
+                ORDER BY row_index
+                """;
+            command.Parameters.AddWithValue("$library_id", library);
+            command.Parameters.AddWithValue("$item_type", itemType.ToString());
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                results.Add(new TitleBrowseGroupCount(reader.GetString(0), reader.GetInt32(1)));
+            }
+        }
+
+        return results;
+    }
+
+    /// <inheritdoc />
+    public int GetVirtualListCount(Guid libraryId, VirtualListType listType)
+        => GetVirtualList(libraryId, listType).Count;
+
+    /// <inheritdoc />
+    [Obsolete("Use ReplaceTitleBrowseGroup instead.")]
+    public void ReplaceKanaRow(Guid libraryId, BaseItemKind itemType, int rowIndex, IReadOnlyList<Guid> itemIds)
+        => ReplaceTitleBrowseGroup(libraryId, itemType, rowIndex.ToString(CultureInfo.InvariantCulture), itemIds);
+
+    /// <inheritdoc />
+    [Obsolete("Use GetTitleBrowseGroup instead.")]
     public IReadOnlyList<Guid> GetKanaRow(Guid libraryId, BaseItemKind itemType, int rowIndex)
-        => GetOrderedList("kana_row", libraryId, itemType.ToString(), rowIndex.ToString(CultureInfo.InvariantCulture), null);
+        => GetTitleBrowseGroup(libraryId, itemType, rowIndex.ToString(CultureInfo.InvariantCulture));
 
     /// <inheritdoc />
     public void ReplaceFacets(Guid libraryId, FacetType facetType, IReadOnlyDictionary<string, IReadOnlyList<Guid>> entries)

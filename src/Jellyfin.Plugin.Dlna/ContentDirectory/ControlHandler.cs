@@ -1111,7 +1111,7 @@ public class ControlHandler : BaseControlHandler
             case StubType.BrowseByKana:
                 return GetBrowseByKanaRows(item);
             case StubType.BrowseByKanaRow:
-                return GetBrowseByKanaRowItems(item, query, BaseItemKind.Movie, serverItem.KanaRowIndex ?? 0, timing);
+                return GetBrowseByTitleGroupItems(item, query, BaseItemKind.Movie, serverItem.TitleBrowseGroupId ?? TitleBrowsePresetDefaults.OtherGroupId, timing);
             case StubType.BrowseByYear:
                 return GetBrowseByYearFolders(item, BaseItemKind.Movie, timing);
             case StubType.BrowseByYearItem:
@@ -1153,91 +1153,35 @@ public class ControlHandler : BaseControlHandler
         }
 
         var config = GetPluginConfiguration();
-        var serverItemsList = new List<ServerItem>
-        {
-            new(item, StubType.ContinueWatching)
-        };
+        var serverItemsList = new List<ServerItem>();
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.ContinueWatching, config, _indexStore, _indexService, _libraryManager);
 
         if (config.EnableRecentlyAddedMovies)
         {
-            serverItemsList.Add(new(item, StubType.RecentlyAddedMovies));
+            VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.RecentlyAddedMovies, config, _indexStore, _indexService, _libraryManager);
         }
         else
         {
-            serverItemsList.Add(new(item, StubType.Latest));
+            VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.Latest, config, _indexStore, _indexService, _libraryManager);
         }
 
-        serverItemsList.Add(new(item, StubType.Movies));
-
-        if (config.EnableThreeDMovies)
-        {
-            serverItemsList.Add(new(item, StubType.ThreeDMovies));
-        }
-
-        if (config.EnableFourKMovies)
-        {
-            serverItemsList.Add(new(item, StubType.FourKMovies));
-        }
-
-        if (config.EnableEightKMovies)
-        {
-            serverItemsList.Add(new(item, StubType.EightKMovies));
-        }
-
-        if (config.EnableVrMovies)
-        {
-            serverItemsList.Add(new(item, StubType.VrMovies));
-        }
-
-        if (config.EnableEightKVrMovies)
-        {
-            serverItemsList.Add(new(item, StubType.EightKVrMovies));
-        }
-
-        if (config.EnableRecentlyReleasedMovies)
-        {
-            serverItemsList.Add(new(item, StubType.RecentlyReleasedMovies));
-        }
-
-        serverItemsList.Add(new(item, StubType.Collections));
-        serverItemsList.Add(new(item, StubType.Favorites));
-
-        if (config.EnableBrowseByKana)
-        {
-            serverItemsList.Add(new(item, StubType.BrowseByKana));
-        }
-
-        if (config.EnableBrowseByStudio)
-        {
-            serverItemsList.Add(new(item, StubType.BrowseByStudio));
-        }
-
-        if (config.EnableBrowseByTag)
-        {
-            serverItemsList.Add(new(item, StubType.BrowseByTag));
-        }
-
-        if (config.EnableBrowseByRating)
-        {
-            serverItemsList.Add(new(item, StubType.BrowseByRating));
-        }
-
-        if (config.EnableBrowseByPerson)
-        {
-            serverItemsList.Add(new(item, StubType.BrowseByPerson));
-        }
-
-        if (config.EnableRecentlyModifiedMovies)
-        {
-            serverItemsList.Add(new(item, StubType.RecentlyModifiedMovies));
-        }
-
-        if (config.EnableBrowseByYear)
-        {
-            serverItemsList.Add(new(item, StubType.BrowseByYear));
-        }
-
-        serverItemsList.Add(new(item, StubType.Genres));
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.Movies, config, _indexStore, _indexService, _libraryManager);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.ThreeDMovies, config, _indexStore, _indexService, _libraryManager, config.EnableThreeDMovies);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.FourKMovies, config, _indexStore, _indexService, _libraryManager, config.EnableFourKMovies);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.EightKMovies, config, _indexStore, _indexService, _libraryManager, config.EnableEightKMovies);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.VrMovies, config, _indexStore, _indexService, _libraryManager, config.EnableVrMovies);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.EightKVrMovies, config, _indexStore, _indexService, _libraryManager, config.EnableEightKVrMovies);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.RecentlyReleasedMovies, config, _indexStore, _indexService, _libraryManager, config.EnableRecentlyReleasedMovies);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.Collections, config, _indexStore, _indexService, _libraryManager);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.Favorites, config, _indexStore, _indexService, _libraryManager);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.BrowseByKana, config, _indexStore, _indexService, _libraryManager, config.EnableBrowseByKana);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.BrowseByStudio, config, _indexStore, _indexService, _libraryManager, config.EnableBrowseByStudio);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.BrowseByTag, config, _indexStore, _indexService, _libraryManager, config.EnableBrowseByTag);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.BrowseByRating, config, _indexStore, _indexService, _libraryManager, config.EnableBrowseByRating);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.BrowseByPerson, config, _indexStore, _indexService, _libraryManager, config.EnableBrowseByPerson);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.RecentlyModifiedMovies, config, _indexStore, _indexService, _libraryManager, config.EnableRecentlyModifiedMovies);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.BrowseByYear, config, _indexStore, _indexService, _libraryManager, config.EnableBrowseByYear);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.Genres, config, _indexStore, _indexService, _libraryManager);
 
         var array = serverItemsList.ToArray();
         var movieFolderCount = array.Length;
@@ -1307,7 +1251,7 @@ public class ControlHandler : BaseControlHandler
             case StubType.BrowseByKana:
                 return GetBrowseByKanaRows(item);
             case StubType.BrowseByKanaRow:
-                return GetBrowseByKanaRowItems(item, query, BaseItemKind.Series, serverItem.KanaRowIndex ?? 0, timing);
+                return GetBrowseByTitleGroupItems(item, query, BaseItemKind.Series, serverItem.TitleBrowseGroupId ?? TitleBrowsePresetDefaults.OtherGroupId, timing);
             case StubType.BrowseByYear:
                 return GetBrowseByYearFolders(item, BaseItemKind.Series, timing);
             case StubType.BrowseByYearItem:
@@ -1345,92 +1289,36 @@ public class ControlHandler : BaseControlHandler
         }
 
         var config = GetPluginConfiguration();
-        var serverItemsList = new List<ServerItem>
-        {
-            new(item, StubType.ContinueWatching),
-            new(item, StubType.NextUp)
-        };
+        var serverItemsList = new List<ServerItem>();
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.ContinueWatching, config, _indexStore, _indexService, _libraryManager);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.NextUp, config, _indexStore, _indexService, _libraryManager);
 
         if (config.EnableRecentlyAddedEpisodes)
         {
-            serverItemsList.Add(new(item, StubType.RecentlyAddedEpisodes));
+            VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.RecentlyAddedEpisodes, config, _indexStore, _indexService, _libraryManager);
         }
         else
         {
-            serverItemsList.Add(new(item, StubType.Latest));
+            VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.Latest, config, _indexStore, _indexService, _libraryManager);
         }
 
-        serverItemsList.Add(new(item, StubType.Series));
-
-        if (config.EnableRecentlyUpdatedSeries)
-        {
-            serverItemsList.Add(new(item, StubType.RecentlyUpdatedSeries));
-        }
-
-        if (config.EnableRecentlyAddedSeries)
-        {
-            serverItemsList.Add(new(item, StubType.RecentlyAddedSeries));
-        }
-
-        if (config.EnableRecentlyReleasedEpisodes)
-        {
-            serverItemsList.Add(new(item, StubType.RecentlyReleasedEpisodes));
-        }
-
-        if (config.EnableRecentlyReleasedSeries)
-        {
-            serverItemsList.Add(new(item, StubType.RecentlyReleasedSeries));
-        }
-
-        if (config.EnableCurrentlyAiring)
-        {
-            serverItemsList.Add(new(item, StubType.CurrentlyAiring));
-        }
-
-        serverItemsList.Add(new(item, StubType.FavoriteSeries));
-        serverItemsList.Add(new(item, StubType.FavoriteEpisodes));
-
-        if (config.EnableBrowseByKana)
-        {
-            serverItemsList.Add(new(item, StubType.BrowseByKana));
-        }
-
-        if (config.EnableBrowseByStudio)
-        {
-            serverItemsList.Add(new(item, StubType.BrowseByStudio));
-        }
-
-        if (config.EnableBrowseByTag)
-        {
-            serverItemsList.Add(new(item, StubType.BrowseByTag));
-        }
-
-        if (config.EnableBrowseByRating)
-        {
-            serverItemsList.Add(new(item, StubType.BrowseByRating));
-        }
-
-        if (config.EnableBrowseByPerson)
-        {
-            serverItemsList.Add(new(item, StubType.BrowseByPerson));
-        }
-
-        if (config.EnableRecentlyModifiedSeries)
-        {
-            serverItemsList.Add(new(item, StubType.RecentlyModifiedSeries));
-        }
-
-        if (config.EnableRecentlyModifiedEpisodes)
-        {
-            serverItemsList.Add(new(item, StubType.RecentlyModifiedEpisodes));
-        }
-
-        if (config.EnableBrowseByYear)
-        {
-            serverItemsList.Add(new(item, StubType.BrowseByYear));
-        }
-
-        serverItemsList.Add(new(item, StubType.Genres));
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.Series, config, _indexStore, _indexService, _libraryManager);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.RecentlyUpdatedSeries, config, _indexStore, _indexService, _libraryManager, config.EnableRecentlyUpdatedSeries);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.RecentlyAddedSeries, config, _indexStore, _indexService, _libraryManager, config.EnableRecentlyAddedSeries);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.RecentlyReleasedEpisodes, config, _indexStore, _indexService, _libraryManager, config.EnableRecentlyReleasedEpisodes);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.RecentlyReleasedSeries, config, _indexStore, _indexService, _libraryManager, config.EnableRecentlyReleasedSeries);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.CurrentlyAiring, config, _indexStore, _indexService, _libraryManager, config.EnableCurrentlyAiring);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.FavoriteSeries, config, _indexStore, _indexService, _libraryManager);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.FavoriteEpisodes, config, _indexStore, _indexService, _libraryManager);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.BrowseByKana, config, _indexStore, _indexService, _libraryManager, config.EnableBrowseByKana);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.BrowseByStudio, config, _indexStore, _indexService, _libraryManager, config.EnableBrowseByStudio);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.BrowseByTag, config, _indexStore, _indexService, _libraryManager, config.EnableBrowseByTag);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.BrowseByRating, config, _indexStore, _indexService, _libraryManager, config.EnableBrowseByRating);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.BrowseByPerson, config, _indexStore, _indexService, _libraryManager, config.EnableBrowseByPerson);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.RecentlyModifiedSeries, config, _indexStore, _indexService, _libraryManager, config.EnableRecentlyModifiedSeries);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.RecentlyModifiedEpisodes, config, _indexStore, _indexService, _libraryManager, config.EnableRecentlyModifiedEpisodes);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.BrowseByYear, config, _indexStore, _indexService, _libraryManager, config.EnableBrowseByYear);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.Genres, config, _indexStore, _indexService, _libraryManager);
         serverItemsList.AddRange(IndexBrowseHelper.GetSeriesRangeFolders(_indexStore, _indexService, config, item));
 
         var serverItems = serverItemsList.ToArray();
@@ -1475,7 +1363,7 @@ public class ControlHandler : BaseControlHandler
             case StubType.BrowseByKana:
                 return GetBrowseByKanaRows(item);
             case StubType.BrowseByKanaRow:
-                return GetMixedBrowseByKanaRowItems(item, query, serverItem.KanaRowIndex ?? 0, timing);
+                return GetMixedBrowseByTitleGroupItems(item, query, serverItem.TitleBrowseGroupId ?? TitleBrowsePresetDefaults.OtherGroupId, timing);
             case StubType.BrowseByYear:
                 return GetMixedBrowseByYearFolders(item, timing);
             case StubType.BrowseByYearItem:
@@ -1499,7 +1387,7 @@ public class ControlHandler : BaseControlHandler
         }
 
         var config = GetPluginConfiguration();
-        var array = MixedLibraryBrowseHelper.BuildMixedRootFolderList(config, item, _indexStore, _indexService);
+        var array = MixedLibraryBrowseHelper.BuildMixedRootFolderList(config, item, _indexStore, _indexService, _libraryManager, user);
         return new QueryResult<ServerItem>(null, array.Length, array);
     }
 
@@ -2510,6 +2398,15 @@ public class ControlHandler : BaseControlHandler
             }
         }
 
+        if (DidlBuilder.TryParseTitleBrowseGroupClientId(id, out libraryId, out var titleGroupId))
+        {
+            var library = _libraryManager.GetItemById(libraryId);
+            if (library is not null)
+            {
+                return new ServerItem(library, StubType.BrowseByKanaRow, libraryId, titleBrowseGroupId: titleGroupId);
+            }
+        }
+
         if (DidlBuilder.TryParseKanaRowClientId(id, out libraryId, out var kanaRowIndex))
         {
             var library = _libraryManager.GetItemById(libraryId);
@@ -2972,15 +2869,26 @@ public class ControlHandler : BaseControlHandler
         return ToResult(null, totalCount, allItems.Items);
     }
 
-    private static QueryResult<ServerItem> GetBrowseByKanaRows(BaseItem library)
+    private QueryResult<ServerItem> GetBrowseByKanaRows(BaseItem library)
     {
-        var rows = KanaRowHelper.CreateRowFolders(library);
+        var config = GetPluginConfiguration();
+        var preset = TitleBrowseConfigurationHelper.ResolvePreset(config, library.Id);
+        var rows = TitleBrowseHelper.CreateGroupFolders(
+            library,
+            preset,
+            config.HideEmptyVirtualFolders,
+            _indexStore);
         return new QueryResult<ServerItem>(null, rows.Length, rows);
     }
 
-    private QueryResult<ServerItem> GetBrowseByKanaRowItems(BaseItem parent, InternalItemsQuery query, BaseItemKind itemType, int rowIndex, BrowseTimingScope? timing = null)
+    private QueryResult<ServerItem> GetBrowseByTitleGroupItems(
+        BaseItem parent,
+        InternalItemsQuery query,
+        BaseItemKind itemType,
+        string groupId,
+        BrowseTimingScope? timing = null)
     {
-        var indexed = IndexBrowseHelper.TryGetKanaRow(
+        var indexed = IndexBrowseHelper.TryGetTitleBrowseGroup(
             _indexStore,
             _libraryManager,
             _indexService,
@@ -2988,14 +2896,14 @@ public class ControlHandler : BaseControlHandler
             parent,
             query,
             itemType,
-            rowIndex,
+            groupId,
             timing);
         if (indexed is not null)
         {
             return ApplyIndexedResult(indexed, timing);
         }
 
-        var kanaOptions = KanaClassificationOptions.FromConfiguration(GetPluginConfiguration());
+        var options = TitleBrowseOptions.FromConfiguration(GetPluginConfiguration(), parent.Id);
         var listQuery = new InternalItemsQuery(query.User)
         {
             OrderBy = [(ItemSortBy.SortName, SortOrder.Ascending)],
@@ -3008,33 +2916,33 @@ public class ControlHandler : BaseControlHandler
         PrepareItemsQuery(listQuery);
 
         var filtered = _libraryManager.GetItemsResult(listQuery).Items
-            .Where(i => KanaRowHelper.MatchesRow(i.SortName, i.Name, rowIndex, kanaOptions))
+            .Where(i => TitleBrowseHelper.MatchesGroup(i.SortName, i.Name, groupId, options))
             .ToList();
 
         return ToResult(null, filtered.Count, filtered);
     }
 
-    private QueryResult<ServerItem> GetMixedBrowseByKanaRowItems(
+    private QueryResult<ServerItem> GetMixedBrowseByTitleGroupItems(
         BaseItem parent,
         InternalItemsQuery query,
-        int rowIndex,
+        string groupId,
         BrowseTimingScope? timing = null)
     {
-        var indexed = IndexBrowseHelper.TryGetMixedKanaRow(
+        var indexed = IndexBrowseHelper.TryGetMixedTitleBrowseGroup(
             _indexStore,
             _libraryManager,
             _indexService,
             GetPluginConfiguration(),
             parent,
             query,
-            rowIndex,
+            groupId,
             timing);
         if (indexed is not null)
         {
             return ApplyIndexedResult(indexed, timing);
         }
 
-        var kanaOptions = KanaClassificationOptions.FromConfiguration(GetPluginConfiguration());
+        var options = TitleBrowseOptions.FromConfiguration(GetPluginConfiguration(), parent.Id);
         var listQuery = new InternalItemsQuery(query.User)
         {
             OrderBy = [(ItemSortBy.SortName, SortOrder.Ascending)],
@@ -3047,7 +2955,7 @@ public class ControlHandler : BaseControlHandler
         PrepareItemsQuery(listQuery);
 
         var filtered = _libraryManager.GetItemsResult(listQuery).Items
-            .Where(i => KanaRowHelper.MatchesRow(i.SortName, i.Name, rowIndex, kanaOptions))
+            .Where(i => TitleBrowseHelper.MatchesGroup(i.SortName, i.Name, groupId, options))
             .ToList();
 
         return ToResult(null, filtered.Count, filtered);

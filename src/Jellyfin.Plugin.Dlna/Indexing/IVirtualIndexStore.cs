@@ -76,12 +76,47 @@ public interface IVirtualIndexStore
     IReadOnlyList<Guid> GetVirtualList(Guid libraryId, VirtualListType listType);
 
     /// <summary>
+    /// Replaces title browse group entries for a library and item type.
+    /// </summary>
+    /// <param name="libraryId">The library id.</param>
+    /// <param name="itemType">The item type.</param>
+    /// <param name="groupId">The group id.</param>
+    /// <param name="itemIds">Ordered item ids.</param>
+    void ReplaceTitleBrowseGroup(Guid libraryId, BaseItemKind itemType, string groupId, IReadOnlyList<Guid> itemIds);
+
+    /// <summary>
+    /// Gets title browse group item ids.
+    /// </summary>
+    /// <param name="libraryId">The library id.</param>
+    /// <param name="itemType">The item type.</param>
+    /// <param name="groupId">The group id.</param>
+    /// <returns>Ordered item ids.</returns>
+    IReadOnlyList<Guid> GetTitleBrowseGroup(Guid libraryId, BaseItemKind itemType, string groupId);
+
+    /// <summary>
+    /// Gets item counts per title browse group for a library and item type.
+    /// </summary>
+    /// <param name="libraryId">The library id.</param>
+    /// <param name="itemType">The item type.</param>
+    /// <returns>Group counts.</returns>
+    IReadOnlyList<TitleBrowseGroupCount> GetTitleBrowseGroupCounts(Guid libraryId, BaseItemKind itemType);
+
+    /// <summary>
+    /// Gets the item count for a virtual list.
+    /// </summary>
+    /// <param name="libraryId">The library id.</param>
+    /// <param name="listType">The list type.</param>
+    /// <returns>The count.</returns>
+    int GetVirtualListCount(Guid libraryId, VirtualListType listType);
+
+    /// <summary>
     /// Replaces kana row entries for a library and item type.
     /// </summary>
     /// <param name="libraryId">The library id.</param>
     /// <param name="itemType">The item type.</param>
     /// <param name="rowIndex">The row index.</param>
     /// <param name="itemIds">Ordered item ids.</param>
+    [Obsolete("Use ReplaceTitleBrowseGroup instead.")]
     void ReplaceKanaRow(Guid libraryId, BaseItemKind itemType, int rowIndex, IReadOnlyList<Guid> itemIds);
 
     /// <summary>
@@ -91,6 +126,7 @@ public interface IVirtualIndexStore
     /// <param name="itemType">The item type.</param>
     /// <param name="rowIndex">The row index.</param>
     /// <returns>Ordered item ids.</returns>
+    [Obsolete("Use GetTitleBrowseGroup instead.")]
     IReadOnlyList<Guid> GetKanaRow(Guid libraryId, BaseItemKind itemType, int rowIndex);
 
     /// <summary>

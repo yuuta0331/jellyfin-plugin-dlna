@@ -41,10 +41,13 @@ public static class BrowseConfigFingerprint
         hash.Add(config.EnableVrMovies);
         hash.Add(config.EnableEightKVrMovies);
         hash.Add(config.EnableBrowseByKana);
+        hash.Add(config.ActiveTitleBrowsePresetId);
+        hash.Add(config.HideEmptyVirtualFolders);
+        hash.Add(config.TitleBrowsePresets?.Length ?? 0);
+        hash.Add(config.LibraryTitleBrowseOverrides?.Length ?? 0);
+        hash.Add(TitleBrowseConfigurationFingerprint.AddPresetContent(config));
         hash.Add(config.EnableBrowseByYear);
         hash.Add(config.EnableExtras);
-        hash.Add(config.EnableKanaPrefixStripping);
-        hash.Add(config.KanaTitlePrefixes.Length);
         hash.Add(config.EnableVirtualFolderIndex);
         hash.Add(config.EnableRecentlyUpdatedSeries);
         hash.Add(config.EnableBrowseByStudio);

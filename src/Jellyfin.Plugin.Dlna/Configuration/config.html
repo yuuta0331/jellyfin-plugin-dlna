@@ -137,19 +137,40 @@
                         <div class="checkboxContainer">
                             <label>
                                 <input type="checkbox" is="emby-checkbox" id="enableBrowseByKana" />
-                                <span data-i18n="EnableBrowseByKana">Enable Browse By Kana</span>
+                                <span data-i18n="EnableBrowseByKana">Enable Browse By Title</span>
                             </label>
+                        </div>
+                        <div class="selectContainer">
+                            <select is="emby-select" id="activeTitleBrowsePresetId" label="Active Title Browse Preset:" data-i18n="[label]ActiveTitleBrowsePresetId"></select>
+                            <div class="fieldDescription" data-i18n="ActiveTitleBrowsePresetIdHelp">
+                                Choose the default grouping preset for title browse folders.
+                            </div>
                         </div>
                         <div class="checkboxContainer">
                             <label>
-                                <input type="checkbox" is="emby-checkbox" id="enableKanaPrefixStripping" />
-                                <span data-i18n="EnableKanaPrefixStripping">Strip title prefixes for kana classification</span>
+                                <input type="checkbox" is="emby-checkbox" id="hideEmptyVirtualFolders" />
+                                <span data-i18n="HideEmptyVirtualFolders">Hide empty virtual folders</span>
                             </label>
                         </div>
                         <div class="inputContainer">
-                            <textarea is="emby-textarea" id="kanaTitlePrefixes" label="Kana Title Prefixes:" rows="5"></textarea>
-                            <div class="fieldDescription" data-i18n="KanaTitlePrefixesHelp">
-                                One prefix per line.
+                            <textarea is="emby-textarea" id="titleBrowsePresetsJson" label="Title Browse Presets (JSON):" rows="8"></textarea>
+                            <div class="fieldDescription" data-i18n="TitleBrowsePresetsJsonHelp">
+                                Advanced: edit preset definitions as JSON. Built-in presets are merged on save.
+                            </div>
+                        </div>
+                        <h3 class="sectionTitle" data-i18n="SectionLibraryTitleBrowse">Per-Library Title Browse</h3>
+                        <div class="selectContainer">
+                            <select is="emby-select" id="libraryTitleBrowseLibraryId" label="Library:" data-i18n="[label]LibraryTitleBrowseLibraryId"></select>
+                        </div>
+                        <div class="selectContainer">
+                            <select is="emby-select" id="libraryTitleBrowsePresetOverride" label="Preset Override:" data-i18n="[label]LibraryTitleBrowsePresetOverride">
+                                <option value="">(Use global preset)</option>
+                            </select>
+                        </div>
+                        <div class="inputContainer">
+                            <textarea is="emby-textarea" id="libraryTitleStripRegexes" label="Title Strip Regexes:" rows="4"></textarea>
+                            <div class="fieldDescription" data-i18n="LibraryTitleStripRegexesHelp">
+                                One regex per line. Matched prefixes are removed before classification for the selected library.
                             </div>
                         </div>
                         <div class="checkboxContainer">

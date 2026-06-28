@@ -1,5 +1,6 @@
 using System;
 using MediaBrowser.Controller.Entities;
+using Jellyfin.Plugin.Dlna.Configuration;
 using Jellyfin.Plugin.Dlna.Indexing;
 
 namespace Jellyfin.Plugin.Dlna.ContentDirectory;
@@ -25,7 +26,8 @@ internal sealed class ServerItem
     /// <param name="item">The <see cref="BaseItem"/>.</param>
     /// <param name="stubType">The stub type.</param>
     /// <param name="libraryScopeId">Optional library folder id when the item is scoped to a library (e.g. genres).</param>
-    /// <param name="kanaRowIndex">Optional kana row index (0-9) for fifty-sound browse.</param>
+    /// <param name="kanaRowIndex">Optional legacy kana row index for fifty-sound browse.</param>
+    /// <param name="titleBrowseGroupId">Optional title browse group id.</param>
     /// <param name="productionYear">Optional production year for year browse.</param>
     /// <param name="facetKey">Optional facet key for studio/tag/rating browse.</param>
     /// <param name="rangeStart">Optional inclusive range start index for series range folders.</param>
@@ -35,6 +37,7 @@ internal sealed class ServerItem
         StubType? stubType,
         Guid? libraryScopeId = null,
         int? kanaRowIndex = null,
+        string? titleBrowseGroupId = null,
         int? productionYear = null,
         string? facetKey = null,
         int? rangeStart = null,
@@ -43,6 +46,9 @@ internal sealed class ServerItem
         Item = item;
         LibraryScopeId = libraryScopeId;
         KanaRowIndex = kanaRowIndex;
+        TitleBrowseGroupId = titleBrowseGroupId ?? (kanaRowIndex is int legacyRow
+            ? TitleBrowsePresetDefaults.LegacyRowIndexToGroupId(legacyRow)
+            : null);
         ProductionYear = productionYear;
         FacetKey = facetKey;
         RangeStart = rangeStart;
@@ -87,6 +93,11 @@ internal sealed class ServerItem
     /// Gets the kana row index (0 = あ行, 9 = わ行) for fifty-sound browse folders.
     /// </summary>
     public int? KanaRowIndex { get; }
+
+    /// <summary>
+    /// Gets the title browse group id for title browse folders.
+    /// </summary>
+    public string? TitleBrowseGroupId { get; }
 
     /// <summary>
     /// Gets the production year for year browse folders.

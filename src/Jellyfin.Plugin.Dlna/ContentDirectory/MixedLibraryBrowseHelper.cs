@@ -1,7 +1,9 @@
 using System.Collections.Generic;
+using Jellyfin.Database.Implementations.Entities;
 using Jellyfin.Plugin.Dlna.Configuration;
 using Jellyfin.Plugin.Dlna.Indexing;
 using MediaBrowser.Controller.Entities;
+using MediaBrowser.Controller.Library;
 
 namespace Jellyfin.Plugin.Dlna.ContentDirectory;
 
@@ -72,133 +74,47 @@ internal static class MixedLibraryBrowseHelper
         DlnaPluginConfiguration config,
         BaseItem item,
         IVirtualIndexStore store,
-        IDlnaVirtualIndexService indexService)
+        IDlnaVirtualIndexService indexService,
+        ILibraryManager? libraryManager,
+        User? user)
     {
-        var serverItemsList = new List<ServerItem>
-        {
-            new(item, StubType.ContinueWatching),
-            new(item, StubType.NextUp)
-        };
+        var serverItemsList = new List<ServerItem>();
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.ContinueWatching, config, store, indexService, libraryManager);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.NextUp, config, store, indexService, libraryManager);
 
-        if (config.EnableRecentlyAddedEpisodes)
-        {
-            serverItemsList.Add(new(item, StubType.RecentlyAddedEpisodes));
-        }
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.RecentlyAddedEpisodes, config, store, indexService, libraryManager, config.EnableRecentlyAddedEpisodes);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.RecentlyAddedSeries, config, store, indexService, libraryManager, config.EnableRecentlyAddedSeries);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.RecentlyAddedMovies, config, store, indexService, libraryManager, config.EnableRecentlyAddedMovies);
 
-        if (config.EnableRecentlyAddedSeries)
-        {
-            serverItemsList.Add(new(item, StubType.RecentlyAddedSeries));
-        }
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.Series, config, store, indexService, libraryManager);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.Movies, config, store, indexService, libraryManager);
 
-        if (config.EnableRecentlyAddedMovies)
-        {
-            serverItemsList.Add(new(item, StubType.RecentlyAddedMovies));
-        }
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.RecentlyUpdatedSeries, config, store, indexService, libraryManager, config.EnableRecentlyUpdatedSeries);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.RecentlyReleasedEpisodes, config, store, indexService, libraryManager, config.EnableRecentlyReleasedEpisodes);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.RecentlyReleasedSeries, config, store, indexService, libraryManager, config.EnableRecentlyReleasedSeries);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.RecentlyReleasedMovies, config, store, indexService, libraryManager, config.EnableRecentlyReleasedMovies);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.CurrentlyAiring, config, store, indexService, libraryManager, config.EnableCurrentlyAiring);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.ThreeDMovies, config, store, indexService, libraryManager, config.EnableThreeDMovies);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.FourKMovies, config, store, indexService, libraryManager, config.EnableFourKMovies);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.EightKMovies, config, store, indexService, libraryManager, config.EnableEightKMovies);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.VrMovies, config, store, indexService, libraryManager, config.EnableVrMovies);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.EightKVrMovies, config, store, indexService, libraryManager, config.EnableEightKVrMovies);
 
-        serverItemsList.Add(new(item, StubType.Series));
-        serverItemsList.Add(new(item, StubType.Movies));
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.Collections, config, store, indexService, libraryManager);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.Favorites, config, store, indexService, libraryManager);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.FavoriteSeries, config, store, indexService, libraryManager);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.FavoriteEpisodes, config, store, indexService, libraryManager);
 
-        if (config.EnableRecentlyUpdatedSeries)
-        {
-            serverItemsList.Add(new(item, StubType.RecentlyUpdatedSeries));
-        }
-
-        if (config.EnableRecentlyReleasedEpisodes)
-        {
-            serverItemsList.Add(new(item, StubType.RecentlyReleasedEpisodes));
-        }
-
-        if (config.EnableRecentlyReleasedSeries)
-        {
-            serverItemsList.Add(new(item, StubType.RecentlyReleasedSeries));
-        }
-
-        if (config.EnableRecentlyReleasedMovies)
-        {
-            serverItemsList.Add(new(item, StubType.RecentlyReleasedMovies));
-        }
-
-        if (config.EnableCurrentlyAiring)
-        {
-            serverItemsList.Add(new(item, StubType.CurrentlyAiring));
-        }
-
-        if (config.EnableThreeDMovies)
-        {
-            serverItemsList.Add(new(item, StubType.ThreeDMovies));
-        }
-
-        if (config.EnableFourKMovies)
-        {
-            serverItemsList.Add(new(item, StubType.FourKMovies));
-        }
-
-        if (config.EnableEightKMovies)
-        {
-            serverItemsList.Add(new(item, StubType.EightKMovies));
-        }
-
-        if (config.EnableVrMovies)
-        {
-            serverItemsList.Add(new(item, StubType.VrMovies));
-        }
-
-        if (config.EnableEightKVrMovies)
-        {
-            serverItemsList.Add(new(item, StubType.EightKVrMovies));
-        }
-
-        serverItemsList.Add(new(item, StubType.Collections));
-        serverItemsList.Add(new(item, StubType.Favorites));
-        serverItemsList.Add(new(item, StubType.FavoriteSeries));
-        serverItemsList.Add(new(item, StubType.FavoriteEpisodes));
-
-        if (config.EnableBrowseByKana)
-        {
-            serverItemsList.Add(new(item, StubType.BrowseByKana));
-        }
-
-        if (config.EnableBrowseByStudio)
-        {
-            serverItemsList.Add(new(item, StubType.BrowseByStudio));
-        }
-
-        if (config.EnableBrowseByTag)
-        {
-            serverItemsList.Add(new(item, StubType.BrowseByTag));
-        }
-
-        if (config.EnableBrowseByRating)
-        {
-            serverItemsList.Add(new(item, StubType.BrowseByRating));
-        }
-
-        if (config.EnableBrowseByPerson)
-        {
-            serverItemsList.Add(new(item, StubType.BrowseByPerson));
-        }
-
-        if (config.EnableRecentlyModifiedSeries)
-        {
-            serverItemsList.Add(new(item, StubType.RecentlyModifiedSeries));
-        }
-
-        if (config.EnableRecentlyModifiedMovies)
-        {
-            serverItemsList.Add(new(item, StubType.RecentlyModifiedMovies));
-        }
-
-        if (config.EnableRecentlyModifiedEpisodes)
-        {
-            serverItemsList.Add(new(item, StubType.RecentlyModifiedEpisodes));
-        }
-
-        if (config.EnableBrowseByYear)
-        {
-            serverItemsList.Add(new(item, StubType.BrowseByYear));
-        }
-
-        serverItemsList.Add(new(item, StubType.Genres));
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.BrowseByKana, config, store, indexService, libraryManager, config.EnableBrowseByKana);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.BrowseByStudio, config, store, indexService, libraryManager, config.EnableBrowseByStudio);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.BrowseByTag, config, store, indexService, libraryManager, config.EnableBrowseByTag);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.BrowseByRating, config, store, indexService, libraryManager, config.EnableBrowseByRating);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.BrowseByPerson, config, store, indexService, libraryManager, config.EnableBrowseByPerson);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.RecentlyModifiedSeries, config, store, indexService, libraryManager, config.EnableRecentlyModifiedSeries);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.RecentlyModifiedMovies, config, store, indexService, libraryManager, config.EnableRecentlyModifiedMovies);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.RecentlyModifiedEpisodes, config, store, indexService, libraryManager, config.EnableRecentlyModifiedEpisodes);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.BrowseByYear, config, store, indexService, libraryManager, config.EnableBrowseByYear);
+        VirtualFolderEmptyChecker.AddIfVisible(serverItemsList, item, user, StubType.Genres, config, store, indexService, libraryManager);
         serverItemsList.AddRange(IndexBrowseHelper.GetSeriesRangeFolders(store, indexService, config, item));
 
         return serverItemsList.ToArray();

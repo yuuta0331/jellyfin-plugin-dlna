@@ -125,22 +125,25 @@ public class DlnaPluginConfiguration : BasePluginConfiguration
     public bool EnableBrowseByKana { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets a value indicating whether to strip known prefixes before kana row classification.
+    /// Gets or sets the active title browse preset id.
     /// </summary>
-    public bool EnableKanaPrefixStripping { get; set; } = true;
+    public string ActiveTitleBrowsePresetId { get; set; } = TitleBrowsePresetDefaults.AlphabetPresetId;
 
     /// <summary>
-    /// Gets or sets title prefixes to strip before kana row classification.
+    /// Gets or sets title browse presets (built-in and user-defined).
     /// </summary>
 #pragma warning disable CA1819 // Properties should not return arrays - Jellyfin configuration pattern
-    public string[] KanaTitlePrefixes { get; set; } =
-    [
-        "劇場版",
-        "映画",
-        "OVA",
-        "TV",
-        "特撮"
-    ];
+    public TitleBrowsePreset[] TitleBrowsePresets { get; set; } = TitleBrowsePresetDefaults.CreateBuiltInPresets();
+
+    /// <summary>
+    /// Gets or sets per-library title browse overrides.
+    /// </summary>
+    public LibraryTitleBrowseOverride[] LibraryTitleBrowseOverrides { get; set; } = [];
+
+    /// <summary>
+    /// Gets or sets a value indicating whether empty virtual folders should be hidden.
+    /// </summary>
+    public bool HideEmptyVirtualFolders { get; set; } = false;
 #pragma warning restore CA1819
 
     /// <summary>

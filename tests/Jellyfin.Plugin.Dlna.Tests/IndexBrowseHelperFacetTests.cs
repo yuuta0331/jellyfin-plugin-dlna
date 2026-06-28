@@ -151,6 +151,16 @@ public class IndexBrowseHelperFacetTests
 
         public IReadOnlyList<Guid> GetVirtualList(Guid libraryId, VirtualListType listType) => [];
 
+        public int GetVirtualListCount(Guid libraryId, VirtualListType listType) => 0;
+
+        public void ReplaceTitleBrowseGroup(Guid libraryId, Jellyfin.Data.Enums.BaseItemKind itemType, string groupId, IReadOnlyList<Guid> itemIds)
+        {
+        }
+
+        public IReadOnlyList<Guid> GetTitleBrowseGroup(Guid libraryId, Jellyfin.Data.Enums.BaseItemKind itemType, string groupId) => [];
+
+        public IReadOnlyList<TitleBrowseGroupCount> GetTitleBrowseGroupCounts(Guid libraryId, Jellyfin.Data.Enums.BaseItemKind itemType) => [];
+
         public void ReplaceKanaRow(Guid libraryId, Jellyfin.Data.Enums.BaseItemKind itemType, int rowIndex, IReadOnlyList<Guid> itemIds)
         {
         }

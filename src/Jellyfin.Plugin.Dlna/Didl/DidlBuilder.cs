@@ -469,9 +469,20 @@ public class DidlBuilder
 
     private string GetDisplayName(BaseItem item, StubType? itemStubType, BaseItem? context, ServerItem? serverItem = null)
     {
-        if (serverItem?.StubType == StubType.BrowseByKanaRow && serverItem.KanaRowIndex is int kanaRow)
+        if (serverItem?.StubType == StubType.BrowseByKanaRow)
         {
-            return KanaRowHelper.GetRowLabel(kanaRow, IsJapanese());
+            var config = DlnaPlugin.Instance?.Configuration;
+            if (config is not null && serverItem.TitleBrowseGroupId is string groupId)
+            {
+                var preset = TitleBrowseConfigurationHelper.ResolvePreset(config, serverItem.LibraryScopeId ?? item.Id);
+                return TitleBrowseHelper.GetGroupLabel(preset, groupId, IsJapanese());
+            }
+
+            if (serverItem.KanaRowIndex is int kanaRow)
+            {
+                var preset = TitleBrowsePresetDefaults.CreateJapaneseKanaPreset();
+                return TitleBrowseHelper.GetGroupLabel(preset, TitleBrowsePresetDefaults.LegacyRowIndexToGroupId(kanaRow), IsJapanese());
+            }
         }
 
         if (serverItem?.StubType == StubType.BrowseByYearItem && serverItem.ProductionYear is int year)
@@ -531,7 +542,17 @@ public class DidlBuilder
                 case StubType.CurrentlyAiring:
                     return IsJapanese() ? "放送中" : "Currently Airing";
                 case StubType.BrowseByKana:
-                    return IsJapanese() ? "五十音" : "Browse By Kana";
+                {
+                    var config = DlnaPlugin.Instance?.Configuration;
+                    if (config is not null)
+                    {
+                        var libraryId = serverItem?.LibraryScopeId ?? item.Id;
+                        var preset = TitleBrowseConfigurationHelper.ResolvePreset(config, libraryId);
+                        return IsJapanese() ? preset.NameJa : preset.NameEn;
+                    }
+
+                    return IsJapanese() ? "頭文字別" : "Browse By Title";
+                }
                 case StubType.BrowseByStudio:
                     return IsJapanese() ? "スタジオ別" : "Browse By Studio";
                 case StubType.BrowseByTag:
@@ -584,7 +605,7 @@ public class DidlBuilder
                 var tagsList = new System.Collections.Generic.List<string>();
 
                 // 1. 3D Tagging
-                if (DlnaPlugin.Instance.Configuration.EnableAuto3DTagging)
+                if (DlnaPlugin.Instance?.Configuration.EnableAuto3DTagging == true)
                 {
                     var format = video.Video3DFormat;
                     if (format.HasValue)
@@ -602,7 +623,7 @@ public class DidlBuilder
                 }
 
                 // 2. VR Tagging (VR180 / VR360)
-                if (DlnaPlugin.Instance.Configuration.EnableAutoVrTagging)
+                if (DlnaPlugin.Instance?.Configuration.EnableAutoVrTagging == true)
                 {
                     if (IsVrVideo(video))
                     {
@@ -631,7 +652,7 @@ public class DidlBuilder
                 }
 
                 // 3. Resolution Tagging (4K / 8K)
-                if (DlnaPlugin.Instance.Configuration.EnableAutoResolutionTagging)
+                if (DlnaPlugin.Instance?.Configuration.EnableAutoResolutionTagging == true)
                 {
                     var w = video.Width;
                     var h = video.Height;
@@ -1810,6 +1831,13 @@ public class DidlBuilder
         }
 
         if (serverItem.StubType == StubType.BrowseByKanaRow
+            && serverItem.TitleBrowseGroupId is string groupId
+            && serverItem.LibraryScopeId is Guid titleLibraryId)
+        {
+            return GetTitleBrowseGroupClientId(titleLibraryId, groupId);
+        }
+
+        if (serverItem.StubType == StubType.BrowseByKanaRow
             && serverItem.KanaRowIndex is int rowIndex
             && serverItem.LibraryScopeId is Guid kanaLibraryId)
         {
@@ -1854,10 +1882,46 @@ public class DidlBuilder
     }
 
     /// <summary>
+    /// Builds a DLNA object id for a title browse group within a library.
+    /// </summary>
+    public static string GetTitleBrowseGroupClientId(Guid libraryId, string groupId)
+        => string.Create(CultureInfo.InvariantCulture, $"titlegroup_{libraryId:N}_{groupId}");
+
+    /// <summary>
     /// Builds a DLNA object id for a kana row within a library.
     /// </summary>
     public static string GetKanaRowClientId(Guid libraryId, int rowIndex)
         => string.Create(CultureInfo.InvariantCulture, $"kanarow_{libraryId:N}_{rowIndex}");
+
+    /// <summary>
+    /// Parses a title browse group object id.
+    /// </summary>
+    public static bool TryParseTitleBrowseGroupClientId(string id, out Guid libraryId, out string groupId)
+    {
+        libraryId = default;
+        groupId = string.Empty;
+
+        const string prefix = "titlegroup_";
+        if (!id.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var remainder = id[prefix.Length..];
+        var divider = remainder.IndexOf('_', StringComparison.Ordinal);
+        if (divider <= 0)
+        {
+            return false;
+        }
+
+        if (!Guid.TryParse(remainder[..divider], out libraryId))
+        {
+            return false;
+        }
+
+        groupId = remainder[(divider + 1)..];
+        return !string.IsNullOrEmpty(groupId);
+    }
 
     /// <summary>
     /// Builds a DLNA object id for a production year within a library.
@@ -1915,8 +1979,7 @@ public class DidlBuilder
         }
 
         return int.TryParse(remainder[(divider + 1)..], NumberStyles.Integer, CultureInfo.InvariantCulture, out rowIndex)
-            && rowIndex >= 0
-            && rowIndex < KanaRowHelper.RowCount;
+            && rowIndex >= 0;
     }
 
     /// <summary>

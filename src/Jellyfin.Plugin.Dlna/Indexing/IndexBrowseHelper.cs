@@ -46,7 +46,7 @@ internal static class IndexBrowseHelper
         return LoadBrowsableItems(parent.Id, store, libraryManager, config, query, ids, timing);
     }
 
-    internal static BrowsableQueryResult? TryGetKanaRow(
+    internal static BrowsableQueryResult? TryGetTitleBrowseGroup(
         IVirtualIndexStore store,
         ILibraryManager libraryManager,
         IDlnaVirtualIndexService indexService,
@@ -54,7 +54,7 @@ internal static class IndexBrowseHelper
         BaseItem parent,
         InternalItemsQuery query,
         BaseItemKind itemType,
-        int rowIndex,
+        string groupId,
         BrowseTimingScope? timing)
     {
         if (!config.EnableIndexKana || !CanUseIndex(config, indexService, parent.Id))
@@ -63,21 +63,21 @@ internal static class IndexBrowseHelper
         }
 
         var sw = Stopwatch.StartNew();
-        var ids = store.GetKanaRow(parent.Id, itemType, rowIndex);
+        var ids = store.GetTitleBrowseGroup(parent.Id, itemType, groupId);
         sw.Stop();
         timing?.AddIndexMs(sw.ElapsedMilliseconds);
 
         return LoadBrowsableItems(parent.Id, store, libraryManager, config, query, ids, timing);
     }
 
-    internal static BrowsableQueryResult? TryGetMixedKanaRow(
+    internal static BrowsableQueryResult? TryGetMixedTitleBrowseGroup(
         IVirtualIndexStore store,
         ILibraryManager libraryManager,
         IDlnaVirtualIndexService indexService,
         DlnaPluginConfiguration config,
         BaseItem parent,
         InternalItemsQuery query,
-        int rowIndex,
+        string groupId,
         BrowseTimingScope? timing)
     {
         if (!config.EnableIndexKana || !CanUseIndex(config, indexService, parent.Id))
@@ -86,8 +86,8 @@ internal static class IndexBrowseHelper
         }
 
         var sw = Stopwatch.StartNew();
-        var seriesIds = store.GetKanaRow(parent.Id, BaseItemKind.Series, rowIndex);
-        var movieIds = store.GetKanaRow(parent.Id, BaseItemKind.Movie, rowIndex);
+        var seriesIds = store.GetTitleBrowseGroup(parent.Id, BaseItemKind.Series, groupId);
+        var movieIds = store.GetTitleBrowseGroup(parent.Id, BaseItemKind.Movie, groupId);
         var ids = seriesIds.Concat(movieIds).Distinct().ToList();
 
         if (ids.Count > 0 && config.EnableItemSummaryBrowse)
@@ -105,6 +105,46 @@ internal static class IndexBrowseHelper
 
         return LoadBrowsableItems(parent.Id, store, libraryManager, config, query, ids, timing);
     }
+
+    internal static BrowsableQueryResult? TryGetKanaRow(
+        IVirtualIndexStore store,
+        ILibraryManager libraryManager,
+        IDlnaVirtualIndexService indexService,
+        DlnaPluginConfiguration config,
+        BaseItem parent,
+        InternalItemsQuery query,
+        BaseItemKind itemType,
+        int rowIndex,
+        BrowseTimingScope? timing)
+        => TryGetTitleBrowseGroup(
+            store,
+            libraryManager,
+            indexService,
+            config,
+            parent,
+            query,
+            itemType,
+            TitleBrowsePresetDefaults.LegacyRowIndexToGroupId(rowIndex),
+            timing);
+
+    internal static BrowsableQueryResult? TryGetMixedKanaRow(
+        IVirtualIndexStore store,
+        ILibraryManager libraryManager,
+        IDlnaVirtualIndexService indexService,
+        DlnaPluginConfiguration config,
+        BaseItem parent,
+        InternalItemsQuery query,
+        int rowIndex,
+        BrowseTimingScope? timing)
+        => TryGetMixedTitleBrowseGroup(
+            store,
+            libraryManager,
+            indexService,
+            config,
+            parent,
+            query,
+            TitleBrowsePresetDefaults.LegacyRowIndexToGroupId(rowIndex),
+            timing);
 
     internal static BrowsableQueryResult? TryGetFacetItems(
         IVirtualIndexStore store,

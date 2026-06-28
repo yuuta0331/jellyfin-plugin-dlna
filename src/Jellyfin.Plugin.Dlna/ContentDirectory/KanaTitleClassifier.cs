@@ -10,28 +10,49 @@ namespace Jellyfin.Plugin.Dlna.ContentDirectory;
 /// </summary>
 internal static class KanaTitleClassifier
 {
-    private const int MaxPrefixStripIterations = 5;
-
     private static readonly Dictionary<char, int> RowByBaseKana = BuildRowMap();
 
     /// <summary>
-    /// Classifies a title into a kana browse row index.
+    /// Legacy row index for alphanumeric titles.
     /// </summary>
-    /// <returns>Row index 0-11, or null when input is invalid.</returns>
-    public static int? Classify(string? sortName, string? name, KanaClassificationOptions options)
+    public const int AlphanumericRowIndex = 10;
+
+    /// <summary>
+    /// Legacy row index for unclassified titles.
+    /// </summary>
+    public const int OtherRowIndex = 11;
+
+    /// <summary>
+    /// Classifies a normalized title string into a kana row index from the first classifiable character.
+    /// </summary>
+    public static int ClassifyNormalizedFirstCharacter(string normalized, out bool startsWithKanji)
+        => ClassifyFirstCharacter(normalized, out startsWithKanji);
+
+    /// <summary>
+    /// Classifies a title into a kana browse row index using title browse options.
+    /// </summary>
+    public static int? ClassifyKanaRowIndex(string? source, TitleBrowseOptions options, out bool startsWithKanji)
     {
-        var sortNameRow = ClassifySingle(sortName, options, out var sortNameStartsWithKanji);
-        var nameRow = ClassifySingle(name, options, out var nameStartsWithKanji);
-        return ChooseBestRow(sortNameRow, nameRow, sortNameStartsWithKanji, nameStartsWithKanji);
+        startsWithKanji = false;
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            return null;
+        }
+
+        var normalized = NormalizeString(source);
+        normalized = TitleBrowseClassifierStripHelper.StripWithRegexes(normalized, options.TitleStripRegexes);
+        return ClassifyFirstCharacter(normalized, out startsWithKanji);
     }
 
-    private static int ChooseBestRow(
+    /// <summary>
+    /// Chooses the best kana row from SortName and Name evaluation results.
+    /// </summary>
+    public static int? ChooseBestRow(
         int? sortNameRow,
         int? nameRow,
         bool sortNameStartsWithKanji,
         bool nameStartsWithKanji)
     {
-        // Use the first classifiable character only (頭文字). Prefer an explicit kana reading.
         if (sortNameRow is >= 0 and <= 9)
         {
             return sortNameRow.Value;
@@ -42,40 +63,63 @@ internal static class KanaTitleClassifier
             return nameRow.Value;
         }
 
-        // Do not map kanji-first Japanese titles to romanized SortName buckets.
-        if (sortNameRow == KanaRowHelper.AlphanumericRowIndex && !nameStartsWithKanji)
+        if (sortNameRow == AlphanumericRowIndex && !nameStartsWithKanji)
         {
-            return KanaRowHelper.AlphanumericRowIndex;
+            return AlphanumericRowIndex;
         }
 
-        if (nameRow == KanaRowHelper.AlphanumericRowIndex)
+        if (nameRow == AlphanumericRowIndex)
         {
-            return KanaRowHelper.AlphanumericRowIndex;
+            return AlphanumericRowIndex;
         }
 
         if (nameStartsWithKanji)
         {
-            return nameRow ?? KanaRowHelper.OtherRowIndex;
+            return nameRow ?? OtherRowIndex;
         }
 
-        return sortNameRow ?? nameRow ?? KanaRowHelper.OtherRowIndex;
+        return sortNameRow ?? nameRow ?? OtherRowIndex;
     }
 
-    private static int? ClassifySingle(string? source, KanaClassificationOptions options, out bool startsWithKanji)
+    /// <summary>
+    /// Normalizes a title string for classification.
+    /// </summary>
+    public static string NormalizeString(string input)
     {
-        startsWithKanji = false;
-        if (string.IsNullOrWhiteSpace(source))
+        var nfkc = input.Normalize(NormalizationForm.FormKC);
+        var builder = new StringBuilder(nfkc.Length);
+        foreach (var c in nfkc)
         {
-            return null;
+            builder.Append(NormalizeKanaChar(c));
         }
 
-        var normalized = NormalizeString(source);
-        if (options.EnablePrefixStripping)
+        return builder.ToString();
+    }
+
+    /// <summary>
+    /// Returns true when the character should be skipped at the start of a title.
+    /// </summary>
+    public static bool IsLeadingSkippable(char c)
+    {
+        if (char.IsWhiteSpace(c))
         {
-            normalized = StripPrefixes(normalized, options.Prefixes);
+            return true;
         }
 
-        return ClassifyFirstCharacter(normalized, out startsWithKanji);
+        return CharUnicodeInfo.GetUnicodeCategory(c) switch
+        {
+            UnicodeCategory.OpenPunctuation => true,
+            UnicodeCategory.ClosePunctuation => true,
+            UnicodeCategory.InitialQuotePunctuation => true,
+            UnicodeCategory.FinalQuotePunctuation => true,
+            UnicodeCategory.OtherPunctuation => true,
+            UnicodeCategory.DashPunctuation => true,
+            UnicodeCategory.MathSymbol => true,
+            UnicodeCategory.CurrencySymbol => true,
+            UnicodeCategory.ModifierSymbol => true,
+            UnicodeCategory.OtherSymbol => true,
+            _ => false
+        };
     }
 
     private static int ClassifyFirstCharacter(string normalized, out bool startsWithKanji)
@@ -92,12 +136,12 @@ internal static class KanaTitleClassifier
             if (IsKanji(c))
             {
                 startsWithKanji = true;
-                return KanaRowHelper.OtherRowIndex;
+                return OtherRowIndex;
             }
 
             if (IsAlphanumeric(c))
             {
-                return KanaRowHelper.AlphanumericRowIndex;
+                return AlphanumericRowIndex;
             }
 
             if (IsHiragana(c))
@@ -109,105 +153,10 @@ internal static class KanaTitleClassifier
                 }
             }
 
-            return KanaRowHelper.OtherRowIndex;
+            return OtherRowIndex;
         }
 
-        return KanaRowHelper.OtherRowIndex;
-    }
-
-    private static string NormalizeString(string input)
-    {
-        var nfkc = input.Normalize(NormalizationForm.FormKC);
-        var builder = new StringBuilder(nfkc.Length);
-        foreach (var c in nfkc)
-        {
-            builder.Append(NormalizeKanaChar(c));
-        }
-
-        return builder.ToString();
-    }
-
-    private static string StripPrefixes(string text, IReadOnlyList<string> prefixes)
-    {
-        if (prefixes.Count == 0)
-        {
-            return text;
-        }
-
-        var result = text;
-        for (var iteration = 0; iteration < MaxPrefixStripIterations; iteration++)
-        {
-            var index = 0;
-            while (index < result.Length && IsLeadingSkippable(result[index]))
-            {
-                index++;
-            }
-
-            if (index > 0)
-            {
-                result = result[index..];
-            }
-
-            if (result.Length == 0)
-            {
-                break;
-            }
-
-            var stripped = false;
-            foreach (var prefix in prefixes)
-            {
-                if (TryMatchPrefix(result, prefix, out var prefixLength))
-                {
-                    result = result[prefixLength..];
-                    stripped = true;
-                    break;
-                }
-            }
-
-            if (!stripped)
-            {
-                break;
-            }
-        }
-
-        return result;
-    }
-
-    private static bool TryMatchPrefix(string text, string prefix, out int prefixLength)
-    {
-        prefixLength = 0;
-        if (string.IsNullOrEmpty(prefix))
-        {
-            return false;
-        }
-
-        if (text.StartsWith(prefix, StringComparison.Ordinal))
-        {
-            prefixLength = prefix.Length;
-            return true;
-        }
-
-        if (ContainsAsciiLetter(prefix)
-            && text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-        {
-            prefixLength = prefix.Length;
-            return true;
-        }
-
-        return false;
-    }
-
-    private static bool ContainsAsciiLetter(string value)
-    {
-        foreach (var c in value)
-        {
-            if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return OtherRowIndex;
     }
 
     private static char NormalizeKanaChar(char c)
@@ -245,29 +194,6 @@ internal static class KanaTitleClassifier
         };
 
         return c;
-    }
-
-    private static bool IsLeadingSkippable(char c)
-    {
-        if (char.IsWhiteSpace(c))
-        {
-            return true;
-        }
-
-        return CharUnicodeInfo.GetUnicodeCategory(c) switch
-        {
-            UnicodeCategory.OpenPunctuation => true,
-            UnicodeCategory.ClosePunctuation => true,
-            UnicodeCategory.InitialQuotePunctuation => true,
-            UnicodeCategory.FinalQuotePunctuation => true,
-            UnicodeCategory.OtherPunctuation => true,
-            UnicodeCategory.DashPunctuation => true,
-            UnicodeCategory.MathSymbol => true,
-            UnicodeCategory.CurrencySymbol => true,
-            UnicodeCategory.ModifierSymbol => true,
-            UnicodeCategory.OtherSymbol => true,
-            _ => false
-        };
     }
 
     private static bool IsKanji(char c)
