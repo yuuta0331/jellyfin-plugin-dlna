@@ -1,7 +1,7 @@
 name: "DLNA"
 guid: "33EBA9CD-7DA1-4720-967F-DD7DAE7B74A1"
 imageUrl: ""
-version: 12.0.1
+version: 12.1.0
 targetAbi: "10.11.0.0"
 framework: "net9.0"
 owner: "yuuta0331"
@@ -16,8 +16,9 @@ artifacts:
   - "Jellyfin.Plugin.Dlna.Playback.dll"
   - "Rssdp.dll"
 changelog: |-
-  - Replace kana-row classification with preset-based title browse (alphabet / japanese-kana)
-  - Add library-specific regex overrides for title prefix stripping
-  - Add HideEmptyVirtualFolders to hide empty virtual browse folders
-  - Fix Non-Quest playback URL query parameter (?dlnaheaders=true)
-  - Extend Browse settings UI with preset selection and config loading fixes
+  - Add collapsible advanced settings for JSON presets and title-strip regex fields
+  - Fix summary browse parentID for virtual folders (mixed library playback)
+  - Add MusicVideo playback URLs in summary browse responses
+  - Index home videos (Video/Photo) and music videos (MusicVideo)
+  - Add hybrid summary/DTO loading when index coverage is partial
+  - Bump browse cache schema version to invalidate stale L1 responses
