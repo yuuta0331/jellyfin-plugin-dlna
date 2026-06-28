@@ -8,6 +8,14 @@
     "owner": "yuuta0331",
     "versions": [
       {
+        "changelog": "## What's New\n\n- Add collapsible advanced settings for JSON presets and title-strip regex fields\n- Fix summary browse parentID for virtual folders (mixed library playback)\n- Add MusicVideo playback URLs in summary browse responses\n- Index home videos (Video/Photo) and music videos (MusicVideo)\n- Add hybrid summary/DTO loading when index coverage is partial\n- Bump browse cache schema version to invalidate stale L1 responses\n\n## Install\n\nAdd this plugin repository in Jellyfin Dashboard → Plugins → Repositories:\n\nhttps://yuuta0331.github.io/jellyfin-plugin-dlna/manifest.json\n",
+        "checksum": "e42b995664a272d989f06ddffd26b5a8",
+        "sourceUrl": "https://github.com/yuuta0331/jellyfin-plugin-dlna/releases/download/v12.1.0/dlna_12.1.0.0.zip",
+        "targetAbi": "10.11.0.0",
+        "timestamp": "2026-06-28T12:44:48Z",
+        "version": "12.1.0"
+      },
+      {
         "changelog": "## What's New\n\n- Replace kana-row classification with preset-based title browse (alphabet / japanese-kana)\n- Add library-specific regex overrides for title prefix stripping\n- Add HideEmptyVirtualFolders to hide empty virtual browse folders\n- Fix Non-Quest playback URL query parameter (?dlnaheaders=true)\n- Extend Browse settings UI with preset selection and config loading fixes\n\n## Install\n\nAdd this plugin repository in Jellyfin Dashboard → Plugins → Repositories:\n\nhttps://yuuta0331.github.io/jellyfin-plugin-dlna/manifest.json\n",
         "checksum": "110a419671cf901fd8fa37640b9accd2",
         "sourceUrl": "https://github.com/yuuta0331/jellyfin-plugin-dlna/releases/download/v12.0.1/dlna_12.0.1.0.zip",
