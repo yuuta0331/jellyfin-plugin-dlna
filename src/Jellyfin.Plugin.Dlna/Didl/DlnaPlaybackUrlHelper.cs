@@ -63,7 +63,7 @@ public static class DlnaPlaybackUrlHelper
     /// Returns true when the item type is playable media in browse summaries.
     /// </summary>
     public static bool IsPlayableSummaryItem(BaseItemKind itemType)
-        => itemType is BaseItemKind.Movie or BaseItemKind.Episode or BaseItemKind.Video or BaseItemKind.Audio;
+        => itemType is BaseItemKind.Movie or BaseItemKind.Episode or BaseItemKind.Video or BaseItemKind.Audio or BaseItemKind.MusicVideo;
 
     /// <summary>
     /// Writes a lightweight playback <c>res</c> element for indexed browse summaries.

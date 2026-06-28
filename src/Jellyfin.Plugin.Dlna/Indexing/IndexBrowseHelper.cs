@@ -458,15 +458,40 @@ internal static class IndexBrowseHelper
                 var summaryItems = ids.Select(id => new ServerItem(summaries[id])).ToList();
                 return new BrowsableQueryResult(summaryItems, ids.Count, true);
             }
+
+            if (summaries.Count > 0)
+            {
+                var missingIds = ids.Where(id => !summaries.ContainsKey(id)).ToList();
+                var dtoSw = Stopwatch.StartNew();
+                var baseItems = LoadBaseItemsByIds(libraryManager, sourceQuery, missingIds);
+                dtoSw.Stop();
+                timing?.AddDtoMs(dtoSw.ElapsedMilliseconds);
+
+                var dtoById = baseItems.Items.ToDictionary(item => item.Id);
+                var hybridItems = new List<ServerItem>(ids.Count);
+                foreach (var id in ids)
+                {
+                    if (summaries.TryGetValue(id, out var summary))
+                    {
+                        hybridItems.Add(new ServerItem(summary));
+                    }
+                    else if (dtoById.TryGetValue(id, out var baseItem))
+                    {
+                        hybridItems.Add(new ServerItem(baseItem, null));
+                    }
+                }
+
+                return new BrowsableQueryResult(hybridItems, ids.Count, summaries.Count > 0);
+            }
         }
 
-        var dtoSw = Stopwatch.StartNew();
-        var baseItems = LoadBaseItemsByIds(libraryManager, sourceQuery, ids);
-        dtoSw.Stop();
-        timing?.AddDtoMs(dtoSw.ElapsedMilliseconds);
+        var fullDtoSw = Stopwatch.StartNew();
+        var allBaseItems = LoadBaseItemsByIds(libraryManager, sourceQuery, ids);
+        fullDtoSw.Stop();
+        timing?.AddDtoMs(fullDtoSw.ElapsedMilliseconds);
 
-        var serverItems = baseItems.Items.Select(item => new ServerItem(item, null)).ToList();
-        return new BrowsableQueryResult(serverItems, baseItems.TotalRecordCount, false);
+        var allServerItems = allBaseItems.Items.Select(item => new ServerItem(item, null)).ToList();
+        return new BrowsableQueryResult(allServerItems, allBaseItems.TotalRecordCount, false);
     }
 
     private static QueryResult<BaseItem> LoadBaseItemsByIds(

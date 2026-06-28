@@ -925,11 +925,11 @@ public class DidlBuilder
     /// <summary>
     /// Writes an XML folder element from a <see cref="ServerItem"/>.
     /// </summary>
-    internal void WriteFolderElement(XmlWriter writer, ServerItem serverItem, BaseItem? context, int? childCount, Filter filter, string? requestedId = null, DlnaImageBrowseContext imageContext = DlnaImageBrowseContext.Default)
+    internal void WriteFolderElement(XmlWriter writer, ServerItem serverItem, BaseItem? context, StubType? contextStubType, int? childCount, Filter filter, string? requestedId = null, DlnaImageBrowseContext imageContext = DlnaImageBrowseContext.Default)
     {
         if (serverItem.IsSummaryBacked)
         {
-            WriteSummaryFolderElement(writer, serverItem, context, childCount, filter, requestedId, imageContext);
+            WriteSummaryFolderElement(writer, serverItem, context, contextStubType, childCount, filter, requestedId, imageContext);
             return;
         }
 
@@ -939,19 +939,19 @@ public class DidlBuilder
     /// <summary>
     /// Writes a minimal DIDL element from an indexed item summary.
     /// </summary>
-    internal void WriteSummaryElement(XmlWriter writer, ServerItem serverItem, BaseItem? context, int? childCount, Filter filter, DlnaImageBrowseContext imageContext)
+    internal void WriteSummaryElement(XmlWriter writer, ServerItem serverItem, BaseItem? context, StubType? contextStubType, int? childCount, Filter filter, DlnaImageBrowseContext imageContext)
     {
         if (serverItem.Summary!.IsFolder)
         {
-            WriteSummaryFolderElement(writer, serverItem, context, childCount, filter, null, imageContext);
+            WriteSummaryFolderElement(writer, serverItem, context, contextStubType, childCount, filter, null, imageContext);
         }
         else
         {
-            WriteSummaryItemElement(writer, serverItem, context, filter, imageContext);
+            WriteSummaryItemElement(writer, serverItem, context, contextStubType, filter, imageContext);
         }
     }
 
-    private void WriteSummaryFolderElement(XmlWriter writer, ServerItem serverItem, BaseItem? context, int? childCount, Filter filter, string? requestedId, DlnaImageBrowseContext imageContext)
+    private void WriteSummaryFolderElement(XmlWriter writer, ServerItem serverItem, BaseItem? context, StubType? contextStubType, int? childCount, Filter filter, string? requestedId, DlnaImageBrowseContext imageContext)
     {
         var summary = serverItem.Summary!;
         writer.WriteStartElement(string.Empty, "container", NsDidl);
@@ -971,7 +971,7 @@ public class DidlBuilder
         else
         {
             writer.WriteAttributeString("id", clientId);
-            writer.WriteAttributeString("parentID", context is not null ? GetClientId(context, null) : GetClientId(summary.ParentId, null));
+            writer.WriteAttributeString("parentID", context is not null ? GetClientId(context, contextStubType) : GetClientId(summary.ParentId, null));
         }
 
         AddValue(writer, "dc", "title", summary.Name, NsDc);
@@ -987,7 +987,7 @@ public class DidlBuilder
         writer.WriteFullEndElement();
     }
 
-    private void WriteSummaryItemElement(XmlWriter writer, ServerItem serverItem, BaseItem? context, Filter filter, DlnaImageBrowseContext imageContext)
+    private void WriteSummaryItemElement(XmlWriter writer, ServerItem serverItem, BaseItem? context, StubType? contextStubType, Filter filter, DlnaImageBrowseContext imageContext)
     {
         var summary = serverItem.Summary!;
         writer.WriteStartElement(string.Empty, "item", NsDidl);
@@ -995,7 +995,7 @@ public class DidlBuilder
         writer.WriteAttributeString("id", GetClientId(serverItem));
         if (context is not null)
         {
-            writer.WriteAttributeString("parentID", GetClientId(context, null));
+            writer.WriteAttributeString("parentID", GetClientId(context, contextStubType));
         }
         else if (summary.ParentId != Guid.Empty)
         {
@@ -1108,7 +1108,7 @@ public class DidlBuilder
         {
             BaseItemKind.Audio => "object.item.audioItem.musicTrack",
             BaseItemKind.Movie when !_profile.RequiresPlainVideoItems => "object.item.videoItem.movie",
-            BaseItemKind.Episode or BaseItemKind.Movie or BaseItemKind.Video => "object.item.videoItem",
+            BaseItemKind.Episode or BaseItemKind.Movie or BaseItemKind.Video or BaseItemKind.MusicVideo => "object.item.videoItem",
             _ => "object.item"
         };
     }

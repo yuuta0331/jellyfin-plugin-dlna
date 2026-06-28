@@ -423,7 +423,7 @@ public class ControlHandler : BaseControlHandler
                     if (item.IsDisplayedAsFolder || serverItem.StubType.HasValue)
                     {
                         var childCount = ResolveChildCount(serverItem, sortCriteria, id);
-                        _didlBuilder.WriteFolderElement(writer, serverItem, null, childCount, filter, id);
+                        _didlBuilder.WriteFolderElement(writer, serverItem, null, null, childCount, filter, id);
                     }
                     else
                     {
@@ -456,7 +456,7 @@ public class ControlHandler : BaseControlHandler
                             var summaryChildCount = childServerItem.Summary!.IsFolder
                                 ? ResolveChildCount(childServerItem, sortCriteria)
                                 : null;
-                            _didlBuilder.WriteSummaryElement(writer, childServerItem, item, summaryChildCount, filter, imageContext);
+                            _didlBuilder.WriteSummaryElement(writer, childServerItem, item, serverItem.StubType, summaryChildCount, filter, imageContext);
                             nodeRecords?.Add(_didlBuilder.CreateBrowseNodeRecord(childServerItem, item, parentClientId, summaryChildCount, imageContext));
                             continue;
                         }
@@ -467,7 +467,7 @@ public class ControlHandler : BaseControlHandler
                         if (childItem.IsDisplayedAsFolder || displayStubType.HasValue)
                         {
                             var childCount = ResolveChildCount(childServerItem, sortCriteria);
-                            _didlBuilder.WriteFolderElement(writer, childServerItem, item, childCount, filter, imageContext: imageContext);
+                            _didlBuilder.WriteFolderElement(writer, childServerItem, item, serverItem.StubType, childCount, filter, imageContext: imageContext);
                             nodeRecords?.Add(_didlBuilder.CreateBrowseNodeRecord(childServerItem, item, parentClientId, childCount, imageContext));
                         }
                         else
@@ -574,14 +574,14 @@ public class ControlHandler : BaseControlHandler
 
                 if (childServerItem.IsSummaryBacked)
                 {
-                    _didlBuilder.WriteSummaryElement(writer, childServerItem, parentItem, node.ChildCount, filter, imageContext);
+                    _didlBuilder.WriteSummaryElement(writer, childServerItem, parentItem, parentServerItem.StubType, node.ChildCount, filter, imageContext);
                     continue;
                 }
 
                 var childItem = childServerItem.Item;
                 if (node.IsFolder || childItem.IsDisplayedAsFolder || childServerItem.StubType.HasValue)
                 {
-                    _didlBuilder.WriteFolderElement(writer, childServerItem, parentItem, node.ChildCount, filter, imageContext: imageContext);
+                    _didlBuilder.WriteFolderElement(writer, childServerItem, parentItem, parentServerItem.StubType, node.ChildCount, filter, imageContext: imageContext);
                 }
                 else
                 {

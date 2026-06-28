@@ -3,6 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <title>DLNA</title>
+    <style>
+        .esqConfigurationPage .dlna-advanced-section h3.sectionTitle.dlna-advanced-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.4em;
+            flex-wrap: wrap;
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.15s ease-out;
+        }
+
+        .esqConfigurationPage .dlna-advanced-section .dlna-advanced-toggle-label {
+            flex: 0 1 auto;
+        }
+
+        .esqConfigurationPage .dlna-advanced-section .dlna-advanced-toggle-hint {
+            flex: 0 1 auto;
+            font-weight: normal;
+            font-size: 0.85em;
+            opacity: 0.7;
+        }
+
+        .esqConfigurationPage .dlna-advanced-section .dlna-advanced-toggle-icon {
+            flex: 0 0 auto;
+            margin-left: auto;
+            display: inline-block;
+            width: 0.55em;
+            height: 0.55em;
+            border-right: 0.15em solid currentColor;
+            border-bottom: 0.15em solid currentColor;
+            transform: rotate(45deg);
+            transform-origin: 50% 45%;
+            transition: transform 0.18s ease-out, color 0.15s ease-out;
+        }
+
+        .esqConfigurationPage .dlna-advanced-section.is-expanded .dlna-advanced-toggle-icon {
+            transform: rotate(-135deg);
+        }
+
+        @media (hover: hover) and (pointer: fine) {
+            .esqConfigurationPage .dlna-advanced-section h3.sectionTitle.dlna-advanced-toggle:hover,
+            .esqConfigurationPage .dlna-advanced-section h3.sectionTitle.dlna-advanced-toggle:hover .dlna-advanced-toggle-label,
+            .esqConfigurationPage .dlna-advanced-section h3.sectionTitle.dlna-advanced-toggle:hover .dlna-advanced-toggle-hint,
+            .esqConfigurationPage .dlna-advanced-section h3.sectionTitle.dlna-advanced-toggle:hover .dlna-advanced-toggle-icon {
+                color: #00a4dc !important;
+            }
+        }
+
+        .esqConfigurationPage .dlna-advanced-section .dlna-advanced-body.hide {
+            display: none;
+        }
+
+        .esqConfigurationPage .dlna-advanced-section .dlna-advanced-body,
+        .esqConfigurationPage .dlna-advanced-section .inputContainer {
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+        .esqConfigurationPage .dlna-advanced-section .dlna-advanced-body textarea.emby-textarea {
+            width: auto;
+            max-width: 100%;
+            resize: both;
+            font-family: Consolas, 'Courier New', monospace;
+            font-size: 0.92em;
+            line-height: 1.45;
+            box-sizing: border-box;
+        }
+    </style>
 </head>
 <body>
 <div data-role="page" class="page type-interior pluginConfigurationPage esqConfigurationPage" data-controller="__plugin/dlnajs">
@@ -152,10 +221,19 @@
                                 <span data-i18n="HideEmptyVirtualFolders">Hide empty virtual folders</span>
                             </label>
                         </div>
-                        <div class="inputContainer">
-                            <textarea is="emby-textarea" id="titleBrowsePresetsJson" label="Title Browse Presets (JSON):" rows="8"></textarea>
-                            <div class="fieldDescription" data-i18n="TitleBrowsePresetsJsonHelp">
-                                Advanced: edit preset definitions as JSON. Built-in presets are merged on save.
+                        <div class="dlna-advanced-section">
+                            <h3 class="sectionTitle dlna-advanced-toggle" tabindex="0" role="button" aria-expanded="false">
+                                <span class="dlna-advanced-toggle-label" data-i18n="TitleBrowsePresetsJson">Title Browse Presets (JSON):</span>
+                                <span class="dlna-advanced-toggle-hint" data-i18n="CollapsibleAdvancedHint">(click to expand/collapse)</span>
+                                <span class="dlna-advanced-toggle-icon" aria-hidden="true"></span>
+                            </h3>
+                            <div class="dlna-advanced-body hide">
+                                <div class="inputContainer">
+                                    <textarea class="emby-textarea" id="titleBrowsePresetsJson" data-min-rows="6" data-max-rows="24" data-min-cols="60" data-max-cols="120"></textarea>
+                                    <div class="fieldDescription" data-i18n="TitleBrowsePresetsJsonHelp">
+                                        Advanced: edit preset definitions as JSON. Built-in presets are merged on save.
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <h3 class="sectionTitle" data-i18n="SectionLibraryTitleBrowse">Per-Library Title Browse</h3>
@@ -167,10 +245,19 @@
                                 <option value="">(Use global preset)</option>
                             </select>
                         </div>
-                        <div class="inputContainer">
-                            <textarea is="emby-textarea" id="libraryTitleStripRegexes" label="Title Strip Regexes:" rows="4"></textarea>
-                            <div class="fieldDescription" data-i18n="LibraryTitleStripRegexesHelp">
-                                One regex per line. Matched prefixes are removed before classification for the selected library.
+                        <div class="dlna-advanced-section">
+                            <h3 class="sectionTitle dlna-advanced-toggle" tabindex="0" role="button" aria-expanded="false">
+                                <span class="dlna-advanced-toggle-label" data-i18n="LibraryTitleStripRegexes">Title Strip Regexes:</span>
+                                <span class="dlna-advanced-toggle-hint" data-i18n="CollapsibleAdvancedHint">(click to expand/collapse)</span>
+                                <span class="dlna-advanced-toggle-icon" aria-hidden="true"></span>
+                            </h3>
+                            <div class="dlna-advanced-body hide">
+                                <div class="inputContainer">
+                                    <textarea class="emby-textarea" id="libraryTitleStripRegexes" data-min-rows="3" data-max-rows="12" data-min-cols="40" data-max-cols="80"></textarea>
+                                    <div class="fieldDescription" data-i18n="LibraryTitleStripRegexesHelp">
+                                        One regex per line. Matched prefixes are removed before classification for the selected library.
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="checkboxContainer">

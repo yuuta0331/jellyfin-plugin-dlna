@@ -4,6 +4,7 @@ using System.Text;
 using System.Xml;
 using Jellyfin.Data.Enums;
 using Jellyfin.Plugin.Dlna.Configuration;
+using Jellyfin.Plugin.Dlna.ContentDirectory;
 using Jellyfin.Plugin.Dlna.Didl;
 using Jellyfin.Plugin.Dlna.Indexing;
 using Xunit;
@@ -19,6 +20,17 @@ public class MixedLibraryPlaybackTests
 
         Assert.Contains("protocolInfo=\"http-get:*:video/mp4:*\"", didl, StringComparison.Ordinal);
         Assert.Contains("/dlna/videos/", didl, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void MixedLibraryMoviesBrowse_ParentIdUsesMoviesStub_NotLibraryRoot()
+    {
+        var libraryId = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
+        var moviesParentId = DidlBuilder.GetClientId(libraryId, StubType.Movies);
+        var libraryRootId = DidlBuilder.GetClientId(libraryId, null);
+
+        Assert.Equal("movies_" + libraryId.ToString("N"), moviesParentId);
+        Assert.NotEqual(libraryRootId, moviesParentId);
     }
 
     [Theory]

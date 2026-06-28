@@ -10,6 +10,12 @@ namespace Jellyfin.Plugin.Dlna.ContentDirectory;
 public static class BrowseConfigFingerprint
 {
     /// <summary>
+    /// Bumped when browse DIDL output semantics change (e.g. playback URL format, parentID rules).
+    /// Invalidates layer-1 browse response cache on plugin upgrade.
+    /// </summary>
+    internal const int BrowseCacheSchemaVersion = 2;
+
+    /// <summary>
     /// Computes a fingerprint for the supplied configuration.
     /// </summary>
     /// <param name="config">The plugin configuration.</param>
@@ -19,6 +25,7 @@ public static class BrowseConfigFingerprint
         ArgumentNullException.ThrowIfNull(config);
 
         var hash = new HashCode();
+        hash.Add(BrowseCacheSchemaVersion);
         hash.Add(config.EnableQuestCompatibilityMode);
         hash.Add(config.EnsurePlaybackUrlsInBrowse);
         hash.Add(config.ChildCountCalculation);

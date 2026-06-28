@@ -63,6 +63,19 @@ internal sealed class DlnaIndexBuilder
         var isMixed = LibraryBrowseQueryHelper.IsMixedLibrary(library);
         var isTv = library is IHasCollectionType { CollectionType: CollectionType.tvshows } || isMixed;
         var isMovie = library is IHasCollectionType { CollectionType: CollectionType.movies } || isMixed;
+        var isHomeVideos = LibraryBrowseQueryHelper.IsHomeVideosLibrary(library);
+        var isMusicVideos = LibraryBrowseQueryHelper.IsMusicVideosLibrary(library);
+
+        if (isHomeVideos)
+        {
+            summaryItems.AddRange(QueryItems(library, BaseItemKind.Video, cancellationToken));
+            summaryItems.AddRange(QueryItems(library, BaseItemKind.Photo, cancellationToken));
+        }
+
+        if (isMusicVideos)
+        {
+            summaryItems.AddRange(QueryItems(library, BaseItemKind.MusicVideo, cancellationToken));
+        }
 
         IReadOnlyList<BaseItem> seasonItems = [];
         if (config.EnableIndexSeasonList && isTv)

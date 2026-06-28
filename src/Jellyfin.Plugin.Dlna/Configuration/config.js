@@ -41,6 +41,7 @@ const DlnaConfigurationPage = {
             'HideEmptyVirtualFolders': 'Hide empty virtual folders',
             'TitleBrowsePresetsJson': 'Title Browse Presets (JSON):',
             'TitleBrowsePresetsJsonHelp': 'Advanced: edit preset definitions as JSON. Built-in alphabet and Japanese kana presets are preserved on save.',
+            'CollapsibleAdvancedHint': '(click to expand/collapse)',
             'SectionLibraryTitleBrowse': 'Per-Library Title Browse',
             'LibraryTitleBrowseLibraryId': 'Library:',
             'LibraryTitleBrowsePresetOverride': 'Preset Override:',
@@ -264,6 +265,7 @@ const DlnaConfigurationPage = {
             'HideEmptyVirtualFolders': '空の仮想フォルダを非表示にする',
             'TitleBrowsePresetsJson': '頭文字分類プリセット (JSON):',
             'TitleBrowsePresetsJsonHelp': '上級者向け: プリセット定義を JSON で編集します。組み込みのアルファベット・日本語五十音プリセットは保存時に維持されます。',
+            'CollapsibleAdvancedHint': '（クリックで開閉）',
             'SectionLibraryTitleBrowse': 'ライブラリ別頭文字分類',
             'LibraryTitleBrowseLibraryId': 'ライブラリ:',
             'LibraryTitleBrowsePresetOverride': 'プリセット上書き:',
@@ -532,6 +534,98 @@ const DlnaConfigurationPage = {
             }
         });
     },
+    fitAdvancedTextarea: function(textarea, measureWidth) {
+        if (!textarea) {
+            return;
+        }
+
+        const body = textarea.closest('.dlna-advanced-body');
+        const isHidden = body && body.classList.contains('hide');
+        const minRows = parseInt(textarea.getAttribute('data-min-rows'), 10) || 4;
+        const maxRows = parseInt(textarea.getAttribute('data-max-rows'), 10) || 20;
+        const minCols = parseInt(textarea.getAttribute('data-min-cols'), 10) || 48;
+        const maxCols = parseInt(textarea.getAttribute('data-max-cols'), 10) || 120;
+        const value = textarea.value || '';
+        const lines = value.length === 0 ? [''] : value.split(/\r\n|\r|\n/);
+        const lineCount = lines.length;
+        const longestLine = lines.reduce(function(max, line) {
+            return Math.max(max, line.length);
+        }, 0);
+
+        textarea.rows = Math.min(maxRows, Math.max(minRows, lineCount || minRows));
+        textarea.cols = Math.min(maxCols, Math.max(minCols, longestLine + 2));
+
+        if (!measureWidth || isHidden) {
+            return;
+        }
+
+        textarea.style.width = '';
+        textarea.style.height = '';
+
+        const container = textarea.closest('.inputContainer');
+        if (!container || container.clientWidth <= 0) {
+            return;
+        }
+
+        const containerWidth = container.clientWidth;
+        if (textarea.offsetWidth > containerWidth) {
+            textarea.style.width = containerWidth + 'px';
+        }
+    },
+    scheduleAdvancedTextareaFit: function(textarea) {
+        if (!textarea) {
+            return;
+        }
+
+        requestAnimationFrame(function() {
+            requestAnimationFrame(function() {
+                DlnaConfigurationPage.fitAdvancedTextarea(textarea, true);
+            });
+        });
+    },
+    bindCollapsible: function(page) {
+        page.querySelectorAll('.dlna-advanced-section').forEach(function(section) {
+            const toggle = section.querySelector('.dlna-advanced-toggle');
+            const body = section.querySelector('.dlna-advanced-body');
+            if (!toggle || !body) {
+                return;
+            }
+
+            if (section.getAttribute('data-dlna-collapse-bound') === 'true') {
+                return;
+            }
+
+            section.setAttribute('data-dlna-collapse-bound', 'true');
+
+            const setExpanded = function(expanded) {
+                body.classList.toggle('hide', !expanded);
+                section.classList.toggle('is-expanded', expanded);
+                toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+                if (expanded) {
+                    body.querySelectorAll('textarea.emby-textarea').forEach(function(textarea) {
+                        DlnaConfigurationPage.scheduleAdvancedTextareaFit(textarea);
+                    });
+                }
+            };
+
+            setExpanded(false);
+
+            toggle.addEventListener('click', function() {
+                setExpanded(body.classList.contains('hide'));
+            });
+
+            toggle.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setExpanded(body.classList.contains('hide'));
+                }
+            });
+
+            body.querySelectorAll('textarea.emby-textarea').forEach(function(textarea) {
+                DlnaConfigurationPage.fitAdvancedTextarea(textarea, false);
+            });
+        });
+    },
     translatePage: function(page) {
         const dict = DlnaConfigurationPage.getDictionary(page);
 
@@ -568,10 +662,8 @@ const DlnaConfigurationPage = {
             { id: 'prewarmHierarchyMaxSeries', key: 'PrewarmHierarchyMaxSeries' },
             { id: 'prewarmHierarchyMaxSeasonsPerSeries', key: 'PrewarmHierarchyMaxSeasonsPerSeries' },
             { id: 'activeTitleBrowsePresetId', key: 'ActiveTitleBrowsePresetId' },
-            { id: 'titleBrowsePresetsJson', key: 'TitleBrowsePresetsJson' },
             { id: 'libraryTitleBrowseLibraryId', key: 'LibraryTitleBrowseLibraryId' },
-            { id: 'libraryTitleBrowsePresetOverride', key: 'LibraryTitleBrowsePresetOverride' },
-            { id: 'libraryTitleStripRegexes', key: 'LibraryTitleStripRegexes' }
+            { id: 'libraryTitleBrowsePresetOverride', key: 'LibraryTitleBrowsePresetOverride' }
         ];
 
         inputsToTranslate.forEach(function(item) {
@@ -930,6 +1022,7 @@ const DlnaConfigurationPage = {
     },
     loadConfiguration: function(page) {
         DlnaConfigurationPage.translatePage(page);
+        DlnaConfigurationPage.bindCollapsible(page);
 
         ApiClient.getPluginConfiguration(this.pluginUniqueId)
             .then(function(config) {
@@ -949,6 +1042,7 @@ const DlnaConfigurationPage = {
                 page.querySelector('#activeTitleBrowsePresetId').value = config.ActiveTitleBrowsePresetId || DlnaConfigurationPage.defaultTitleBrowsePresetId;
                 page.querySelector('#hideEmptyVirtualFolders').checked = config.HideEmptyVirtualFolders === true;
                 page.querySelector('#titleBrowsePresetsJson').value = DlnaConfigurationPage.formatTitleBrowsePresetsJson(config.TitleBrowsePresets);
+                DlnaConfigurationPage.fitAdvancedTextarea(page.querySelector('#titleBrowsePresetsJson'), false);
                 DlnaConfigurationPage.populateLibraryTitleBrowseOptions(page, config);
                 page.querySelector('#enableBrowseByYear').checked = config.EnableBrowseByYear !== false;
                 page.querySelector('#enableRecentlyAddedMovies').checked = config.EnableRecentlyAddedMovies;
@@ -1139,6 +1233,7 @@ const DlnaConfigurationPage = {
         regexField.value = override && override.TitleStripRegexes
             ? override.TitleStripRegexes.join('\n')
             : '';
+        DlnaConfigurationPage.fitAdvancedTextarea(regexField, false);
     },
     saveLibraryTitleBrowseOverride: function(page) {
         const libraryId = page.querySelector('#libraryTitleBrowseLibraryId').value;
@@ -1280,6 +1375,7 @@ export default function(view) {
 
     DlnaConfigurationPage.bindStorageActions(view);
     DlnaConfigurationPage.bindTabs(view);
+    DlnaConfigurationPage.bindCollapsible(view);
 
     view.addEventListener('viewshow', function() {
         Dashboard.showLoadingMsg();
