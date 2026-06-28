@@ -9,11 +9,19 @@
     "versions": [
       {
         "changelog": "## What's New\n\n- Replace kana-row classification with preset-based title browse (alphabet / japanese-kana)\n- Add library-specific regex overrides for title prefix stripping\n- Add HideEmptyVirtualFolders to hide empty virtual browse folders\n- Fix Non-Quest playback URL query parameter (?dlnaheaders=true)\n- Extend Browse settings UI with preset selection and config loading fixes\n\n## Install\n\nAdd this plugin repository in Jellyfin Dashboard → Plugins → Repositories:\n\nhttps://yuuta0331.github.io/jellyfin-plugin-dlna/manifest.json\n",
-        "checksum": "6ac212689abee9ebf8a9b30311521834",
-        "sourceUrl": "https://github.com/yuuta0331/jellyfin-plugin-dlna/releases/download/v%2212.0.1%22/dlna_12.0.1.0.zip",
+        "checksum": "110a419671cf901fd8fa37640b9accd2",
+        "sourceUrl": "https://github.com/yuuta0331/jellyfin-plugin-dlna/releases/download/v12.0.1/dlna_12.0.1.0.zip",
         "targetAbi": "10.11.0.0",
-        "timestamp": "2026-06-28T09:35:34Z",
+        "timestamp": "2026-06-28T09:45:46Z",
         "version": "12.0.1"
+      },
+      {
+        "changelog": "## What's New\n\n- Fork release with GitHub Pages plugin repository and automated CI/CD publishing\n- Fix Meta Quest 3 DLNA playback when indexed browse omits stream URLs\n- Add episode list image source setting and improve startup index UI\n- Fix DLNA Browse cache reliability and restore thumbnail performance\n- Reorganize DLNA settings UI into tabbed layout with clearer help text\n- Add DLNA browse poster/thumbnail display for virtual folder lists\n- Add virtual folders for mixed, home videos, and music video libraries\n- Add SQLite virtual folder indexes and layered browse caches for performance\n- Add Browse By Kana classification, paging settings, and Quest compatibility mode\n- Add 3D, 4K, 8K, and VR video support\n- Pin Jellyfin API packages to 10.11.10 for Jellyfin 10.11.x compatibility\n\n## Install\n\nAdd this plugin repository in Jellyfin Dashboard → Plugins → Repositories:\n\nhttps://yuuta0331.github.io/jellyfin-plugin-dlna/manifest.json\n",
+        "checksum": "69b51281f996f587a9e3e48313c3b389",
+        "sourceUrl": "https://github.com/yuuta0331/jellyfin-plugin-dlna/releases/download/v12.0.0/dlna_12.0.0.0.zip",
+        "targetAbi": "10.11.0.0",
+        "timestamp": "2026-06-28T09:45:50Z",
+        "version": "12.0.0"
       }
     ]
   }
