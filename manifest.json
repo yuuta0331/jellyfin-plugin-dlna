@@ -8,6 +8,14 @@
     "owner": "yuuta0331",
     "versions": [
       {
+        "changelog": "## What's New\n\n- Add Playback mode (Auto / Prefer Direct Play / Direct Play Only) and True Direct Play browse URLs\n- Add Modern Android device profile with expanded Direct Play containers and MIME types\n- Add debounced index rebuild coordinator and server load guard for safer prewarm defaults\n- Fix index-time StreamBuilder debug log floods using lightweight Direct Play heuristic\n- Fix DLNA capability probe URLs and early transcode guards to avoid transcode lock errors\n- Refresh embedded system device profiles when plugin content changes\n\n## Install\n\nAdd this plugin repository in Jellyfin Dashboard → Plugins → Repositories:\n\nhttps://yuuta0331.github.io/jellyfin-plugin-dlna/manifest.json\n",
+        "checksum": "94628ab5e33fb76b51481caa11060eab",
+        "sourceUrl": "https://github.com/yuuta0331/jellyfin-plugin-dlna/releases/download/v12.2.0/dlna_12.2.0.0.zip",
+        "targetAbi": "10.11.0.0",
+        "timestamp": "2026-06-30T15:59:27Z",
+        "version": "12.2.0"
+      },
+      {
         "changelog": "## What's New\n\n- Add collapsible advanced settings for JSON presets and title-strip regex fields\n- Fix summary browse parentID for virtual folders (mixed library playback)\n- Add MusicVideo playback URLs in summary browse responses\n- Index home videos (Video/Photo) and music videos (MusicVideo)\n- Add hybrid summary/DTO loading when index coverage is partial\n- Bump browse cache schema version to invalidate stale L1 responses\n\n## Install\n\nAdd this plugin repository in Jellyfin Dashboard → Plugins → Repositories:\n\nhttps://yuuta0331.github.io/jellyfin-plugin-dlna/manifest.json\n",
         "checksum": "e42b995664a272d989f06ddffd26b5a8",
         "sourceUrl": "https://github.com/yuuta0331/jellyfin-plugin-dlna/releases/download/v12.1.0/dlna_12.1.0.0.zip",
