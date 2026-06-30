@@ -1,7 +1,7 @@
 name: "DLNA"
 guid: "33EBA9CD-7DA1-4720-967F-DD7DAE7B74A1"
 imageUrl: ""
-version: 12.1.0
+version: 12.2.0
 targetAbi: "10.11.0.0"
 framework: "net9.0"
 owner: "yuuta0331"
@@ -16,9 +16,9 @@ artifacts:
   - "Jellyfin.Plugin.Dlna.Playback.dll"
   - "Rssdp.dll"
 changelog: |-
-  - Add collapsible advanced settings for JSON presets and title-strip regex fields
-  - Fix summary browse parentID for virtual folders (mixed library playback)
-  - Add MusicVideo playback URLs in summary browse responses
-  - Index home videos (Video/Photo) and music videos (MusicVideo)
-  - Add hybrid summary/DTO loading when index coverage is partial
-  - Bump browse cache schema version to invalidate stale L1 responses
+  - Add Playback mode (Auto / Prefer Direct Play / Direct Play Only) and True Direct Play browse URLs
+  - Add Modern Android device profile with expanded Direct Play containers and MIME types
+  - Add debounced index rebuild coordinator and server load guard for safer prewarm defaults
+  - Fix index-time StreamBuilder debug log floods using lightweight Direct Play heuristic
+  - Fix DLNA capability probe URLs and early transcode guards to avoid transcode lock errors
+  - Refresh embedded system device profiles when plugin content changes
