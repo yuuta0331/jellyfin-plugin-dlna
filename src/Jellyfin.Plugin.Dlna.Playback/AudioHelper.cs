@@ -96,7 +96,7 @@ public class AudioHelper
         // CTS lifecycle is managed internally.
         var cancellationTokenSource = new CancellationTokenSource();
 
-        using var state = await StreamingHelpers.GetStreamingState(
+        var state = await StreamingHelpers.GetStreamingState(
                 streamingRequest,
                 _httpContextAccessor.HttpContext,
                 _mediaSourceManager,
@@ -112,9 +112,67 @@ public class AudioHelper
                 cancellationTokenSource.Token)
             .ConfigureAwait(false);
 
+        try
+        {
+            var guard = StreamingHelpers.EvaluateEarlyPlaybackGuard(
+                streamingRequest,
+                _httpContextAccessor.HttpContext.Request,
+                _dlnaManager,
+                _libraryManager,
+                _mediaSourceManager,
+                _mediaEncoder,
+                state);
+
+            if (guard.EarlyResponse is not null)
+            {
+                return guard.EarlyResponse;
+            }
+
+            if (guard.RequiresStateRefresh)
+            {
+                state.Dispose();
+                state = await StreamingHelpers.GetStreamingState(
+                        streamingRequest,
+                        _httpContextAccessor.HttpContext,
+                        _mediaSourceManager,
+                        _userManager,
+                        _libraryManager,
+                        _serverConfigurationManager,
+                        _mediaEncoder,
+                        _encodingHelper,
+                        _dlnaManager,
+                        _deviceManager,
+                        _transcodeManager,
+                        transcodingJobType,
+                        cancellationTokenSource.Token)
+                    .ConfigureAwait(false);
+            }
+
+            return await ServeAudioStreamAsync(
+                state,
+                streamingRequest,
+                _httpContextAccessor.HttpContext,
+                transcodingJobType,
+                isHeadRequest,
+                cancellationTokenSource).ConfigureAwait(false);
+        }
+        finally
+        {
+            state.Dispose();
+        }
+    }
+
+    private async Task<ActionResult> ServeAudioStreamAsync(
+        DlnaStreamState state,
+        DlnaStreamingRequestDto streamingRequest,
+        HttpContext httpContext,
+        TranscodingJobType transcodingJobType,
+        bool isHeadRequest,
+        CancellationTokenSource cancellationTokenSource)
+    {
         if (streamingRequest.Static && state.DirectStreamProvider is not null)
         {
-            StreamingHelpers.AddDlnaHeaders(state, _httpContextAccessor.HttpContext.Response.Headers, true, streamingRequest.StartTimeTicks, _httpContextAccessor.HttpContext.Request, _dlnaManager);
+            StreamingHelpers.AddDlnaHeaders(state, httpContext.Response.Headers, true, streamingRequest.StartTimeTicks, httpContext.Request, _dlnaManager);
 
             var liveStreamInfo = _mediaSourceManager.GetLiveStreamInfo(streamingRequest.LiveStreamId);
             if (liveStreamInfo is null)
@@ -130,10 +188,10 @@ public class AudioHelper
         // Static remote stream
         if (streamingRequest.Static && state.InputProtocol == MediaProtocol.Http)
         {
-            StreamingHelpers.AddDlnaHeaders(state, _httpContextAccessor.HttpContext.Response.Headers, true, streamingRequest.StartTimeTicks, _httpContextAccessor.HttpContext.Request, _dlnaManager);
+            StreamingHelpers.AddDlnaHeaders(state, httpContext.Response.Headers, true, streamingRequest.StartTimeTicks, httpContext.Request, _dlnaManager);
 
             var httpClient = _httpClientFactory.CreateClient(NamedClient.Default);
-            return await FileStreamResponseHelpers.GetStaticRemoteStreamResult(state, httpClient, _httpContextAccessor.HttpContext).ConfigureAwait(false);
+            return await FileStreamResponseHelpers.GetStaticRemoteStreamResult(state, httpClient, httpContext).ConfigureAwait(false);
         }
 
         if (streamingRequest.Static && state.InputProtocol != MediaProtocol.File)
@@ -147,7 +205,7 @@ public class AudioHelper
         var transcodingJob = _transcodeManager.GetTranscodingJob(outputPath, TranscodingJobType.Progressive);
         var isTranscodeCached = outputPathExists && transcodingJob is not null;
 
-        StreamingHelpers.AddDlnaHeaders(state, _httpContextAccessor.HttpContext.Response.Headers, streamingRequest.Static || isTranscodeCached, streamingRequest.StartTimeTicks, _httpContextAccessor.HttpContext.Request, _dlnaManager);
+        StreamingHelpers.AddDlnaHeaders(state, httpContext.Response.Headers, streamingRequest.Static || isTranscodeCached, streamingRequest.StartTimeTicks, httpContext.Request, _dlnaManager);
 
         // Static stream
         if (streamingRequest.Static)
@@ -171,7 +229,7 @@ public class AudioHelper
         return await FileStreamResponseHelpers.GetTranscodedFile(
             state,
             isHeadRequest,
-            _httpContextAccessor.HttpContext,
+            httpContext,
             _transcodeManager,
             ffmpegCommandLineArguments,
             transcodingJobType,

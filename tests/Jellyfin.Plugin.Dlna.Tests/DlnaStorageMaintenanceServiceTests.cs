@@ -170,6 +170,12 @@ public class DlnaStorageMaintenanceServiceTests
             return Task.CompletedTask;
         }
 
+        public Task<IReadOnlyList<Guid>> TryRebuildLibrariesAsync(IReadOnlyList<Guid> libraryIds, CancellationToken cancellationToken)
+        {
+            RebuildCount += libraryIds.Count;
+            return Task.FromResult<IReadOnlyList<Guid>>(libraryIds);
+        }
+
         public void InvalidateAll()
         {
             _store.ClearAll();

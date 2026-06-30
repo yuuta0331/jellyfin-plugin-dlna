@@ -23,7 +23,7 @@ namespace Jellyfin.Plugin.Dlna.Indexing;
 /// <summary>
 /// Executes Browse SOAP requests to populate the response cache after indexing.
 /// </summary>
-public sealed class DlnaBrowsePrewarmService : IDlnaBrowsePrewarmService
+public sealed class DlnaBrowsePrewarmService : IDlnaBrowsePrewarmService, IDisposable
 {
     private const string ContentDirectoryNamespace = "urn:schemas-upnp-org:service:ContentDirectory:1";
 
@@ -31,9 +31,11 @@ public sealed class DlnaBrowsePrewarmService : IDlnaBrowsePrewarmService
     private readonly ILibraryManager _libraryManager;
     private readonly IVirtualIndexStore _indexStore;
     private readonly IDlnaVirtualIndexService _indexService;
+    private readonly DlnaServerLoadGuard _loadGuard;
     private readonly IServerApplicationHost _applicationHost;
     private readonly INetworkManager _networkManager;
     private readonly ILogger<DlnaBrowsePrewarmService> _logger;
+    private readonly SemaphoreSlim _prewarmLock = new(1, 1);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DlnaBrowsePrewarmService"/> class.
@@ -43,6 +45,7 @@ public sealed class DlnaBrowsePrewarmService : IDlnaBrowsePrewarmService
         ILibraryManager libraryManager,
         IVirtualIndexStore indexStore,
         IDlnaVirtualIndexService indexService,
+        DlnaServerLoadGuard loadGuard,
         IServerApplicationHost applicationHost,
         INetworkManager networkManager,
         ILogger<DlnaBrowsePrewarmService> logger)
@@ -51,6 +54,7 @@ public sealed class DlnaBrowsePrewarmService : IDlnaBrowsePrewarmService
         _libraryManager = libraryManager;
         _indexStore = indexStore;
         _indexService = indexService;
+        _loadGuard = loadGuard;
         _applicationHost = applicationHost;
         _networkManager = networkManager;
         _logger = logger;
@@ -59,7 +63,7 @@ public sealed class DlnaBrowsePrewarmService : IDlnaBrowsePrewarmService
     /// <inheritdoc />
     public async Task PrewarmAsync(Guid? libraryId, CancellationToken cancellationToken)
     {
-        var config = DlnaPlugin.Instance.Configuration;
+        var config = DlnaConfigurationAccessor.Current;
         if (!config.PrewarmBrowseResponses)
         {
             return;
@@ -70,6 +74,35 @@ public sealed class DlnaBrowsePrewarmService : IDlnaBrowsePrewarmService
             return;
         }
 
+        if (!_loadGuard.CanRunPrewarm())
+        {
+            _logger.LogInformation("DLNA prewarm skipped because server is busy or minimum interval not elapsed");
+            return;
+        }
+
+        if (!await _prewarmLock.WaitAsync(0, cancellationToken).ConfigureAwait(false))
+        {
+            _logger.LogInformation("DLNA prewarm skipped because another prewarm is already running");
+            return;
+        }
+
+        try
+        {
+            await PrewarmCoreAsync(libraryId, cancellationToken).ConfigureAwait(false);
+            _loadGuard.RecordPrewarmCompleted();
+        }
+        finally
+        {
+            _prewarmLock.Release();
+        }
+    }
+
+    /// <inheritdoc />
+    public void Dispose() => _prewarmLock.Dispose();
+
+    private async Task PrewarmCoreAsync(Guid? libraryId, CancellationToken cancellationToken)
+    {
+        var config = DlnaConfigurationAccessor.Current;
         var libraries = GetTargetLibraries(libraryId);
         if (libraries.Count == 0)
         {
@@ -78,15 +111,49 @@ public sealed class DlnaBrowsePrewarmService : IDlnaBrowsePrewarmService
 
         var serverId = _applicationHost.SystemId;
         var requestedUrl = BuildPrewarmRequestedUrl(serverId);
-
+        var maxResponses = Math.Max(1, config.MaxPrewarmResponsesPerRun);
         var prewarmed = 0;
+
+        if (config.PrewarmScope == PrewarmScope.Minimal)
+        {
+            try
+            {
+                await ExecuteBrowseAsync("0", requestedUrl, serverId, cancellationToken).ConfigureAwait(false);
+                prewarmed++;
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "DLNA browse prewarm failed for root ObjectID=0");
+            }
+        }
+
         foreach (var library in libraries)
         {
+            if (prewarmed >= maxResponses)
+            {
+                break;
+            }
+
             cancellationToken.ThrowIfCancellationRequested();
 
-            var objectIds = BrowsePrewarmPaths.GetObjectIds(config, library, _indexStore, _indexService, _libraryManager);
+            var objectIds = BrowsePrewarmPaths.GetObjectIdsForScope(
+                config,
+                library,
+                _indexStore,
+                _indexService,
+                _libraryManager);
+
             foreach (var objectId in objectIds)
             {
+                if (prewarmed >= maxResponses)
+                {
+                    break;
+                }
+
                 cancellationToken.ThrowIfCancellationRequested();
 
                 try
@@ -106,9 +173,10 @@ public sealed class DlnaBrowsePrewarmService : IDlnaBrowsePrewarmService
         }
 
         _logger.LogInformation(
-            "DLNA browse prewarm completed Libraries={LibraryCount} Responses={ResponseCount}",
+            "DLNA browse prewarm completed Libraries={LibraryCount} Responses={ResponseCount} Scope={Scope}",
             libraries.Count,
-            prewarmed);
+            prewarmed,
+            config.PrewarmScope);
     }
 
     private IReadOnlyList<BaseItem> GetTargetLibraries(Guid? libraryId)

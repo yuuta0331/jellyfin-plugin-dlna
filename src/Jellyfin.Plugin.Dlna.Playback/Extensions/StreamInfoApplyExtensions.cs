@@ -4,6 +4,7 @@ using System.Linq;
 using Jellyfin.Plugin.Dlna.Playback.Model;
 using MediaBrowser.Controller.Streaming;
 using MediaBrowser.Model.Dlna;
+using MediaBrowser.Model.Session;
 using StreamInfo = MediaBrowser.Model.Dlna.StreamInfo;
 
 namespace Jellyfin.Plugin.Dlna.Playback.Extensions;
@@ -32,7 +33,7 @@ public static class StreamInfoApplyExtensions
 
         request.DeviceId = streamInfo.DeviceId;
         request.MediaSourceId = streamInfo.MediaSourceId;
-        request.Static = streamInfo.IsDirectStream;
+        request.Static = streamInfo.PlayMethod == PlayMethod.DirectPlay;
         request.AudioStreamIndex = streamInfo.AudioStreamIndex;
         request.SubtitleStreamIndex = streamInfo.SubtitleStreamIndex;
         request.AudioSampleRate = streamInfo.AudioSampleRate;

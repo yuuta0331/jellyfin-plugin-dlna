@@ -190,6 +190,7 @@ public class DlnaVideosController : ControllerBase
         [FromQuery] EncodingContext? context,
         [FromQuery] Dictionary<string, string> streamOptions)
     {
+        container = DlnaStreamContainerNormalizer.NormalizeRouteContainer(container);
         var isHeadRequest = Request.Method == System.Net.WebRequestMethods.Http.Head;
         // CTS lifecycle is managed internally.
         var cancellationTokenSource = new CancellationTokenSource();
@@ -264,7 +265,40 @@ public class DlnaVideosController : ControllerBase
                 cancellationTokenSource.Token)
             .ConfigureAwait(false);
 
-        if (@static.HasValue && @static.Value && state.DirectStreamProvider is not null)
+        var guard = StreamingHelpers.EvaluateEarlyPlaybackGuard(
+            streamingRequest,
+            Request,
+            _dlnaManager,
+            _libraryManager,
+            _mediaSourceManager,
+            _mediaEncoder,
+            state);
+
+        if (guard.EarlyResponse is not null)
+        {
+            return guard.EarlyResponse;
+        }
+
+        if (guard.RequiresStateRefresh)
+        {
+            state = await StreamingHelpers.GetStreamingState(
+                    streamingRequest,
+                    HttpContext,
+                    _mediaSourceManager,
+                    _userManager,
+                    _libraryManager,
+                    _serverConfigurationManager,
+                    _mediaEncoder,
+                    _encodingHelper,
+                    _dlnaManager,
+                    _deviceManager,
+                    _transcodingJobHelper,
+                    _transcodingJobType,
+                    cancellationTokenSource.Token)
+                .ConfigureAwait(false);
+        }
+
+        if (streamingRequest.Static && state.DirectStreamProvider is not null)
         {
             StreamingHelpers.AddDlnaHeaders(state, Response.Headers, true, state.Request.StartTimeTicks, Request, _dlnaManager);
 
@@ -280,7 +314,7 @@ public class DlnaVideosController : ControllerBase
         }
 
         // Static remote stream
-        if (@static.HasValue && @static.Value && state.InputProtocol == MediaProtocol.Http)
+        if (streamingRequest.Static && state.InputProtocol == MediaProtocol.Http)
         {
             StreamingHelpers.AddDlnaHeaders(state, Response.Headers, true, state.Request.StartTimeTicks, Request, _dlnaManager);
 
@@ -288,7 +322,7 @@ public class DlnaVideosController : ControllerBase
             return await FileStreamResponseHelpers.GetStaticRemoteStreamResult(state, httpClient, HttpContext).ConfigureAwait(false);
         }
 
-        if (@static.HasValue && @static.Value && state.InputProtocol != MediaProtocol.File)
+        if (streamingRequest.Static && state.InputProtocol != MediaProtocol.File)
         {
             return BadRequest($"Input protocol {state.InputProtocol} cannot be streamed statically");
         }
@@ -299,10 +333,10 @@ public class DlnaVideosController : ControllerBase
         var transcodingJob = _transcodingJobHelper.GetTranscodingJob(outputPath, TranscodingJobType.Progressive);
         var isTranscodeCached = outputPathExists && transcodingJob is not null;
 
-        StreamingHelpers.AddDlnaHeaders(state, Response.Headers, (@static.HasValue && @static.Value) || isTranscodeCached, state.Request.StartTimeTicks, Request, _dlnaManager);
+        StreamingHelpers.AddDlnaHeaders(state, Response.Headers, streamingRequest.Static || isTranscodeCached, state.Request.StartTimeTicks, Request, _dlnaManager);
 
         // Static stream
-        if (@static.HasValue && @static.Value)
+        if (streamingRequest.Static)
         {
             var contentType = state.GetMimeType("." + state.OutputContainer, false) ?? state.GetMimeType(state.MediaPath);
 
@@ -444,7 +478,7 @@ public class DlnaVideosController : ControllerBase
     {
         return GetVideoStream(
             itemId,
-            container,
+            DlnaStreamContainerNormalizer.NormalizeRouteContainer(container) ?? container,
             @static,
             @params,
             tag,

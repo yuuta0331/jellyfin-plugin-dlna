@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
+using Jellyfin.Plugin.Dlna.Model;
 using Jellyfin.Plugin.Dlna.Playback.Model;
 using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Model.Dlna;
@@ -137,6 +138,7 @@ public class DlnaAudioController : ControllerBase
         [FromQuery] EncodingContext? context,
         [FromQuery] Dictionary<string, string>? streamOptions)
     {
+        container = DlnaStreamContainerNormalizer.NormalizeRouteContainer(container);
         var streamingRequest = new DlnaStreamingRequestDto
         {
             Id = itemId,
@@ -304,7 +306,7 @@ public class DlnaAudioController : ControllerBase
         var streamingRequest = new DlnaStreamingRequestDto
         {
             Id = itemId,
-            Container = container,
+            Container = DlnaStreamContainerNormalizer.NormalizeRouteContainer(container) ?? container,
             Static = @static ?? false,
             Params = @params,
             Tag = tag,

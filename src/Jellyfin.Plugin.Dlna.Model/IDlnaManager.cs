@@ -29,6 +29,14 @@ public interface IDlnaManager
     DlnaDeviceProfile GetDefaultProfile();
 
     /// <summary>
+    /// Resolves the device profile for streaming, applying plugin configuration overrides.
+    /// </summary>
+    /// <param name="headers">The request headers.</param>
+    /// <param name="deviceProfileId">An optional explicit profile id from the stream request.</param>
+    /// <returns>The resolved profile and playback flags.</returns>
+    DlnaStreamingProfileContext ResolveStreamingProfile(IHeaderDictionary headers, string? deviceProfileId = null);
+
+    /// <summary>
     /// Creates the profile.
     /// </summary>
     /// <param name="profile">The profile.</param>

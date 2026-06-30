@@ -209,6 +209,66 @@ internal static class BrowsePrewarmPaths
         return ids;
     }
 
+    /// <summary>
+    /// Builds a minimal set of ObjectIDs for Quest-friendly prewarm.
+    /// </summary>
+    internal static IReadOnlyList<string> GetQuestMinimalObjectIds(
+        DlnaPluginConfiguration config,
+        BaseItem library,
+        IDlnaVirtualIndexService indexService)
+    {
+        if (!indexService.IsReady(library.Id))
+        {
+            return [];
+        }
+
+        var libraryId = library.Id;
+        var isTv = library is IHasCollectionType { CollectionType: CollectionType.tvshows };
+        var isMovie = library is IHasCollectionType { CollectionType: CollectionType.movies };
+        var isMixed = LibraryBrowseQueryHelper.IsMixedLibrary(library);
+
+        if (isMixed)
+        {
+            isTv = true;
+            isMovie = true;
+        }
+
+        var ids = new List<string>
+        {
+            libraryId.ToString("N", CultureInfo.InvariantCulture)
+        };
+
+        if (isMovie && config.EnableIndexMoviesList)
+        {
+            ids.Add(DidlBuilder.GetClientId(libraryId, StubType.Movies));
+        }
+
+        if (isTv)
+        {
+            ids.Add(DidlBuilder.GetClientId(libraryId, StubType.Series));
+        }
+
+        return ids;
+    }
+
+    /// <summary>
+    /// Resolves ObjectIDs for prewarm based on configured scope.
+    /// </summary>
+    internal static IReadOnlyList<string> GetObjectIdsForScope(
+        DlnaPluginConfiguration config,
+        BaseItem library,
+        IVirtualIndexStore store,
+        IDlnaVirtualIndexService indexService,
+        ILibraryManager libraryManager)
+    {
+        if (config.PrewarmScope == PrewarmScope.Minimal)
+        {
+            return GetQuestMinimalObjectIds(config, library, indexService);
+        }
+
+        return GetObjectIds(config, library, store, indexService, libraryManager);
+    }
+
     private static void AddGenrePrewarmPaths(
         ICollection<string> ids,
         Guid libraryId,

@@ -14,6 +14,12 @@ public interface IContentInvalidationService
     void InvalidateAll(string reason);
 
     /// <summary>
+    /// Invalidates browse caches immediately and schedules a debounced index rebuild.
+    /// </summary>
+    /// <param name="reason">The invalidation reason.</param>
+    void InvalidateCachesAndScheduleRebuild(string reason);
+
+    /// <summary>
     /// Invalidates caches for a specific library.
     /// </summary>
     /// <param name="libraryId">The library id.</param>
@@ -26,6 +32,12 @@ public interface IContentInvalidationService
     /// <param name="libraryId">The library id.</param>
     /// <param name="reason">The invalidation reason.</param>
     void ScheduleLibraryInvalidation(Guid libraryId, string reason);
+
+    /// <summary>
+    /// Schedules debounced invalidation for all libraries.
+    /// </summary>
+    /// <param name="reason">The invalidation reason.</param>
+    void ScheduleAllLibrariesInvalidation(string reason);
 
     /// <summary>
     /// Gets libraries pending debounced invalidation.

@@ -154,6 +154,11 @@ public class LibraryBrowseQueryHelperTests
         public System.Threading.Tasks.Task RebuildLibraryAsync(Guid libraryId, System.Threading.CancellationToken cancellationToken)
             => System.Threading.Tasks.Task.CompletedTask;
 
+        public System.Threading.Tasks.Task<IReadOnlyList<Guid>> TryRebuildLibrariesAsync(
+            IReadOnlyList<Guid> libraryIds,
+            System.Threading.CancellationToken cancellationToken)
+            => System.Threading.Tasks.Task.FromResult<IReadOnlyList<Guid>>(libraryIds);
+
         public void InvalidateAll()
         {
         }

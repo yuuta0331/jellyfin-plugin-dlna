@@ -95,12 +95,36 @@ const DlnaConfigurationPage = {
             'EnableIndexMoviesListHelp': 'Stores the full movie list per movies library in the index.',
             'EnableIndexSeasonList': 'Index seasons under series',
             'EnableIndexEpisodeList': 'Index episodes under seasons',
-            'RebuildIndexAfterLibraryScan': 'Rebuild index after library changes',
-            'RebuildIndexAfterLibraryScanHelp': 'Rebuilds the virtual index when media libraries are scanned or updated.',
-            'DebounceLibraryChangeInvalidation': 'Debounce cache invalidation',
-            'DebounceLibraryChangeInvalidationHelp': 'Waits before clearing caches when multiple library changes occur in quick succession.',
+            'RebuildIndexAfterLibraryScan': 'Legacy: rebuild index after library changes',
+            'RebuildIndexAfterLibraryScanHelp': 'Kept for compatibility. Either this or automatic rebuild enables debounced index rebuilds.',
+            'EnableAutomaticIndexRebuild': 'Enable automatic index rebuild after library changes',
+            'EnableAutomaticIndexRebuildHelp': 'Rebuilds indexes after library changes settle (debounced). Recommended off on busy servers.',
+            'DebounceLibraryChangeInvalidation': 'Debounce library change processing',
+            'DebounceLibraryChangeInvalidationHelp': 'Waits until library changes settle before rebuilding indexes or clearing caches.',
             'LibraryChangeDebounceSeconds': 'Library change debounce (seconds):',
-            'LibraryChangeDebounceSecondsHelp': 'Seconds to wait after the last library change before invalidating caches.',
+            'LibraryChangeDebounceSecondsHelp': 'Seconds to wait after the last library change before processing (default 600 = 10 minutes).',
+            'SkipIndexWhileServerBusy': 'Skip index work while Jellyfin tasks are running',
+            'SkipIndexWhileServerBusyHelp': 'Defers DLNA index rebuilds while library scans, database optimization, trickplay, and similar tasks run.',
+            'SkipIndexWhenLibraryPathUnavailable': 'Skip index when library paths are unavailable',
+            'SkipIndexWhenLibraryPathUnavailableHelp': 'Defers rebuilds when NAS or library folders are temporarily offline.',
+            'IndexRebuildRetryMinutes': 'Index rebuild retry interval (minutes):',
+            'IndexRebuildRetryMinutesHelp': 'How long to wait before retrying a deferred index rebuild.',
+            'MinIndexIntervalMinutes': 'Minimum minutes between index runs:',
+            'MinIndexIntervalMinutesHelp': 'Prevents back-to-back automatic index rebuilds.',
+            'PrewarmAfterLibraryRebuild': 'Prewarm after automatic index rebuild',
+            'PrewarmAfterLibraryRebuildHelp': 'When enabled, pre-generates Browse XML after debounced library rebuilds. Keep off on busy servers.',
+            'EnableScheduledPrewarm': 'Enable scheduled nightly prewarm',
+            'EnableScheduledPrewarmHelp': 'Runs a low-priority prewarm task daily at 3:00 AM when the server is idle.',
+            'PrewarmScope': 'Prewarm scope:',
+            'PrewarmScopeHelp': 'Minimal prewarms root, libraries, and first-page series/movies lists only.',
+            'PrewarmScopeMinimal': 'Minimal (Quest)',
+            'PrewarmScopeFull': 'Full',
+            'MaxPrewarmResponsesPerRun': 'Max prewarm responses per run:',
+            'MaxPrewarmResponsesPerRunHelp': 'Caps how many Browse responses are generated in one prewarm run.',
+            'PrewarmMinIntervalMinutes': 'Minimum minutes between prewarm runs:',
+            'PrewarmMinIntervalMinutesHelp': 'Prevents back-to-back prewarm runs from overloading the server.',
+            'LogIndexDetails': 'Log detailed index activity',
+            'LogIndexDetailsHelp': 'Emits verbose logs for dirty-library tracking and rebuild scheduling.',
             'EnableRecentlyUpdatedSeries': 'Enable Recently Updated Series folder',
             'EnableBrowseByStudio': 'Enable Browse By Studio',
             'EnableBrowseByTag': 'Enable Browse By Tag',
@@ -110,6 +134,19 @@ const DlnaConfigurationPage = {
             'RangeFolderSize': 'Series per range folder:',
             'RangeFolderSizeHelp': 'Number of series placed in each range subfolder when splitting large lists.',
             'EnableQuestCompatibilityModeHelp': 'Optimizes for Quest DLNA players: returns all items, omits childCount, strips stream URL query strings, and enables response caching. Playback is resolved server-side.',
+            'SectionPlaybackProfiles': 'Playback & Device Profiles',
+            'OverrideDeviceProfileId': 'Force profile for all clients:',
+            'OverrideDeviceProfileIdHelp': 'Overrides User-Agent matching and uses the selected profile for every DLNA stream request.',
+            'FallbackDeviceProfileId': 'Fallback profile:',
+            'FallbackDeviceProfileIdHelp': 'Used when no profile matches the client User-Agent. Choose Modern Android for recent phones and TVs.',
+            'PlaybackMode': 'Playback mode:',
+            'PlaybackModeHelp': 'Direct play only serves original files without FFmpeg remux or transcode. Rebuild the index after changing this setting.',
+            'PlaybackModeAuto': 'Auto (Jellyfin default)',
+            'PlaybackModePreferDirectPlay': 'Prefer direct play (no remux)',
+            'PlaybackModeDirectPlayOnly': 'Direct play only',
+            'DeviceProfilesApiHelp': 'Custom profiles can also be managed via the DLNA Profiles API (GET/POST /Dlna/Profiles). User profiles are stored under the plugin configuration folder.',
+            'DeviceProfileAutoDetect': 'Auto-detect from User-Agent',
+            'DeviceProfileGeneric': 'Built-in generic profile',
             'EnsurePlaybackUrlsInBrowse': 'Include playback URLs in browse listings',
             'EnsurePlaybackUrlsInBrowseHelp': 'Adds video/audio stream URLs to indexed browse responses. Keep enabled for Meta Quest playback.',
             'ChildCountCalculation': 'Child Count Calculation:',
@@ -291,6 +328,19 @@ const DlnaConfigurationPage = {
             'SectionBrowsePaging': 'ページングと上限',
             'EnableQuestCompatibilityMode': 'Quest互換モード',
             'EnableQuestCompatibilityModeHelp': 'Quest向けDLNAプレイヤー向け最適化: 全件返却、childCount省略、ストリームURLのクエリ除去、レスポンスキャッシュを有効化します。再生パラメータはサーバー側で自動解決されます。',
+            'SectionPlaybackProfiles': '再生とデバイスプロファイル',
+            'OverrideDeviceProfileId': '全クライアントに適用するプロファイル:',
+            'OverrideDeviceProfileIdHelp': 'User-Agentの自動判定を上書きし、選択したプロファイルをすべてのDLNAストリームに適用します。',
+            'FallbackDeviceProfileId': 'フォールバックプロファイル:',
+            'FallbackDeviceProfileIdHelp': 'User-Agentがどのプロファイルにも一致しない場合に使います。最新のAndroid端末には「Modern Android」を選んでください。',
+            'PlaybackMode': '再生モード:',
+            'PlaybackModeHelp': 'ダイレクトプレイのみは元ファイルをそのまま配信し、FFmpegのリマックスやトランスコードを行いません。変更後はインデックスの再構築が必要です。',
+            'PlaybackModeAuto': '自動（Jellyfin既定）',
+            'PlaybackModePreferDirectPlay': 'ダイレクトプレイ優先（リマックスなし）',
+            'PlaybackModeDirectPlayOnly': 'ダイレクトプレイのみ',
+            'DeviceProfilesApiHelp': 'カスタムプロファイルはDLNA Profiles API（GET/POST /Dlna/Profiles）でも管理できます。ユーザープロファイルはプラグイン設定フォルダに保存されます。',
+            'DeviceProfileAutoDetect': 'User-Agentから自動判定',
+            'DeviceProfileGeneric': '内蔵の汎用プロファイル',
             'EnsurePlaybackUrlsInBrowse': 'Browse一覧に再生URLを含める',
             'EnsurePlaybackUrlsInBrowseHelp': 'インデックスBrowse応答に動画/音声のストリームURLを追加します。Meta Questでの再生には有効のままにしてください。',
             'ChildCountCalculation': 'childCount計算:',
@@ -377,12 +427,36 @@ const DlnaConfigurationPage = {
             'EnableIndexMoviesListHelp': '映画ライブラリの映画一覧をインデックスに保存します。',
             'EnableIndexSeasonList': 'シーズン一覧をインデックス化する',
             'EnableIndexEpisodeList': 'エピソード一覧をインデックス化する',
-            'RebuildIndexAfterLibraryScan': 'ライブラリ変更後にインデックスを再構築する',
-            'RebuildIndexAfterLibraryScanHelp': 'メディアライブラリのスキャンや更新後に仮想インデックスを再構築します。',
-            'DebounceLibraryChangeInvalidation': 'キャッシュ無効化をデバウンスする',
-            'DebounceLibraryChangeInvalidationHelp': '短時間に複数のライブラリ変更があった場合、キャッシュクリアを待機してから実行します。',
+            'RebuildIndexAfterLibraryScan': '互換: ライブラリ変更後にインデックスを再構築する',
+            'RebuildIndexAfterLibraryScanHelp': '互換用の旧設定です。こちらまたは自動再構築のいずれかがONのとき、デバウンス後に再構築します。',
+            'EnableAutomaticIndexRebuild': 'ライブラリ変更後の自動インデックス再構築を有効にする',
+            'EnableAutomaticIndexRebuildHelp': 'ライブラリ変更が落ち着いてからインデックスを再構築します。負荷の高い環境ではOFFを推奨します。',
+            'DebounceLibraryChangeInvalidation': 'ライブラリ変更処理をデバウンスする',
+            'DebounceLibraryChangeInvalidationHelp': '変更が落ち着くまで待ってから、インデックス再構築またはキャッシュクリアを実行します。',
             'LibraryChangeDebounceSeconds': 'ライブラリ変更デバウンス（秒）:',
-            'LibraryChangeDebounceSecondsHelp': '最後のライブラリ変更からキャッシュを無効化するまでの待機秒数です。',
+            'LibraryChangeDebounceSecondsHelp': '最後のライブラリ変更から処理するまでの待機秒数です（既定 600 秒 = 10 分）。',
+            'SkipIndexWhileServerBusy': 'Jellyfinタスク実行中はインデックス処理をスキップする',
+            'SkipIndexWhileServerBusyHelp': 'ライブラリスキャン、DB最適化、Trickplayなどの実行中はDLNAインデックス再構築を延期します。',
+            'SkipIndexWhenLibraryPathUnavailable': 'ライブラリパスが利用不可のときインデックスをスキップする',
+            'SkipIndexWhenLibraryPathUnavailableHelp': 'NASやライブラリフォルダが一時的に見えない場合に再構築を延期します。',
+            'IndexRebuildRetryMinutes': 'インデックス再構築の再試行間隔（分）:',
+            'IndexRebuildRetryMinutesHelp': '延期されたインデックス再構築を再試行するまでの待機時間です。',
+            'MinIndexIntervalMinutes': 'インデックス実行の最小間隔（分）:',
+            'MinIndexIntervalMinutesHelp': '連続した自動インデックス再構築を防ぎます。',
+            'PrewarmAfterLibraryRebuild': '自動インデックス再構築後にプリウォームする',
+            'PrewarmAfterLibraryRebuildHelp': 'ONにすると、デバウンス後の再構築完了時にBrowse XMLを事前生成します。負荷の高い環境ではOFFを推奨します。',
+            'EnableScheduledPrewarm': '深夜のスケジュールプリウォームを有効にする',
+            'EnableScheduledPrewarmHelp': 'サーバーがアイドルなとき、毎日午前3時に低優先度のプリウォームを実行します。',
+            'PrewarmScope': 'プリウォーム範囲:',
+            'PrewarmScopeHelp': '最小範囲はルート・ライブラリ・シリーズ/映画一覧の先頭ページのみを対象にします。',
+            'PrewarmScopeMinimal': '最小（Quest向け）',
+            'PrewarmScopeFull': 'フル',
+            'MaxPrewarmResponsesPerRun': '1回のプリウォーム上限（レスポンス数）:',
+            'MaxPrewarmResponsesPerRunHelp': '1回のプリウォームで生成するBrowseレスポンス数の上限です。',
+            'PrewarmMinIntervalMinutes': 'プリウォーム実行の最小間隔（分）:',
+            'PrewarmMinIntervalMinutesHelp': '連続したプリウォーム実行によるサーバー負荷を防ぎます。',
+            'LogIndexDetails': 'インデックス処理の詳細ログを出力する',
+            'LogIndexDetailsHelp': 'dirtyライブラリの追跡と再構築スケジュールの詳細ログを出力します。',
             'EnableRecentlyUpdatedSeries': '「最近更新されたシリーズ」フォルダを有効にする',
             'EnableBrowseByStudio': '「スタジオ別」フォルダを有効にする',
             'EnableBrowseByTag': '「タグ別」フォルダを有効にする',
@@ -657,6 +731,11 @@ const DlnaConfigurationPage = {
             { id: 'maxRecentlyAddedItems', key: 'MaxRecentlyAddedItems' },
             { id: 'maxSeriesListItems', key: 'MaxSeriesListItems' },
             { id: 'libraryChangeDebounceSeconds', key: 'LibraryChangeDebounceSeconds' },
+            { id: 'indexRebuildRetryMinutes', key: 'IndexRebuildRetryMinutes' },
+            { id: 'minIndexIntervalMinutes', key: 'MinIndexIntervalMinutes' },
+            { id: 'maxPrewarmResponsesPerRun', key: 'MaxPrewarmResponsesPerRun' },
+            { id: 'prewarmMinIntervalMinutes', key: 'PrewarmMinIntervalMinutes' },
+            { id: 'prewarmScope', key: 'PrewarmScope' },
             { id: 'largeFolderRangeSplitThreshold', key: 'LargeFolderRangeSplitThreshold' },
             { id: 'rangeFolderSize', key: 'RangeFolderSize' },
             { id: 'prewarmHierarchyMaxSeries', key: 'PrewarmHierarchyMaxSeries' },
@@ -681,6 +760,17 @@ const DlnaConfigurationPage = {
         if (unlimitedOption && dict['Unlimited']) {
             unlimitedOption.textContent = dict['Unlimited'];
         }
+
+        const prewarmScopeOptions = {
+            'Minimal': dict['PrewarmScopeMinimal'],
+            'Full': dict['PrewarmScopeFull']
+        };
+        Object.keys(prewarmScopeOptions).forEach(function(value) {
+            const option = page.querySelector('#prewarmScope option[value="' + value + '"]');
+            if (option && prewarmScopeOptions[value]) {
+                option.textContent = prewarmScopeOptions[value];
+            }
+        });
 
         const childCountOptions = {
             'Disabled': dict['ChildCountDisabled'],
@@ -1058,6 +1148,8 @@ const DlnaConfigurationPage = {
                 page.querySelector('#enableExtras').checked = config.EnableExtras;
                 page.querySelector('#enableQuestCompatibilityMode').checked = config.EnableQuestCompatibilityMode === true;
                 page.querySelector('#ensurePlaybackUrlsInBrowse').checked = config.EnsurePlaybackUrlsInBrowse !== false;
+                DlnaConfigurationPage.populateDeviceProfileOptions(page, config);
+                page.querySelector('#playbackMode').value = DlnaConfigurationPage.resolvePlaybackModeValue(config);
                 page.querySelector('#childCountCalculation').value = config.ChildCountCalculation || 'Estimate';
                 page.querySelector('#enableChildCountCache').checked = config.EnableChildCountCache !== false;
                 page.querySelector('#enableBrowseResponseCache').checked = config.EnableBrowseResponseCache !== false;
@@ -1074,8 +1166,13 @@ const DlnaConfigurationPage = {
                 page.querySelector('#maxRecentlyAddedItems').value = config.MaxRecentlyAddedItems || 300;
                 page.querySelector('#maxSeriesListItems').value = config.MaxSeriesListItems || 0;
                 page.querySelector('#enableVirtualFolderIndex').checked = config.EnableVirtualFolderIndex !== false;
-                page.querySelector('#warmupIndexOnStartup').checked = config.WarmupIndexOnStartup !== false;
+                page.querySelector('#warmupIndexOnStartup').checked = config.WarmupIndexOnStartup === true;
                 page.querySelector('#prewarmBrowseResponses').checked = config.PrewarmBrowseResponses === true;
+                page.querySelector('#prewarmAfterLibraryRebuild').checked = config.PrewarmAfterLibraryRebuild === true;
+                page.querySelector('#enableScheduledPrewarm').checked = config.EnableScheduledPrewarm === true;
+                page.querySelector('#prewarmScope').value = config.PrewarmScope || 'Minimal';
+                page.querySelector('#maxPrewarmResponsesPerRun').value = config.MaxPrewarmResponsesPerRun ?? 150;
+                page.querySelector('#prewarmMinIntervalMinutes').value = config.PrewarmMinIntervalMinutes ?? 60;
                 page.querySelector('#prewarmFacetItemFolders').checked = config.PrewarmFacetItemFolders === true;
                 page.querySelector('#prewarmHierarchyFolders').checked = config.PrewarmHierarchyFolders === true;
                 page.querySelector('#prewarmHierarchyMaxSeries').value = config.PrewarmHierarchyMaxSeries ?? 20;
@@ -1094,9 +1191,15 @@ const DlnaConfigurationPage = {
                 page.querySelector('#enableIndexRecentlyReleasedEpisodes').checked = config.EnableIndexRecentlyReleasedEpisodes !== false;
                 page.querySelector('#enableIndexRecentlyReleasedSeries').checked = config.EnableIndexRecentlyReleasedSeries !== false;
                 page.querySelector('#enableIndexRecentlyReleasedMovies').checked = config.EnableIndexRecentlyReleasedMovies !== false;
-                page.querySelector('#rebuildIndexAfterLibraryScan').checked = config.RebuildIndexAfterLibraryScan !== false;
+                page.querySelector('#enableAutomaticIndexRebuild').checked = config.EnableAutomaticIndexRebuild === true;
+                page.querySelector('#rebuildIndexAfterLibraryScan').checked = config.RebuildIndexAfterLibraryScan === true;
                 page.querySelector('#debounceLibraryChangeInvalidation').checked = config.DebounceLibraryChangeInvalidation !== false;
-                page.querySelector('#libraryChangeDebounceSeconds').value = config.LibraryChangeDebounceSeconds ?? 60;
+                page.querySelector('#libraryChangeDebounceSeconds').value = config.LibraryChangeDebounceSeconds ?? 600;
+                page.querySelector('#skipIndexWhileServerBusy').checked = config.SkipIndexWhileServerBusy !== false;
+                page.querySelector('#skipIndexWhenLibraryPathUnavailable').checked = config.SkipIndexWhenLibraryPathUnavailable !== false;
+                page.querySelector('#indexRebuildRetryMinutes').value = config.IndexRebuildRetryMinutes ?? 10;
+                page.querySelector('#minIndexIntervalMinutes').value = config.MinIndexIntervalMinutes ?? 5;
+                page.querySelector('#logIndexDetails').checked = config.LogIndexDetails === true;
                 page.querySelector('#enableRecentlyUpdatedSeries').checked = config.EnableRecentlyUpdatedSeries !== false;
                 page.querySelector('#enableBrowseByStudio').checked = config.EnableBrowseByStudio !== false;
                 page.querySelector('#enableBrowseByTag').checked = config.EnableBrowseByTag !== false;
@@ -1185,6 +1288,42 @@ const DlnaConfigurationPage = {
         activeSelect.innerHTML = html;
         const dict = DlnaConfigurationPage.getDictionary(page);
         overrideSelect.innerHTML = '<option value="">' + (dict['LibraryTitleBrowseUseGlobal'] || '(Use global preset)') + '</option>' + html;
+    },
+    populateDeviceProfileOptions: function(page, config) {
+        const overrideSelect = page.querySelector('#overrideDeviceProfileId');
+        const fallbackSelect = page.querySelector('#fallbackDeviceProfileId');
+        if (!overrideSelect || !fallbackSelect) {
+            return Promise.resolve();
+        }
+
+        return ApiClient.getJSON(ApiClient.getUrl('Dlna/ProfileInfos')).then(function(profiles) {
+            const dict = DlnaConfigurationPage.getDictionary(page);
+            const autoLabel = dict['DeviceProfileAutoDetect'] || 'Auto-detect from User-Agent';
+            const genericLabel = dict['DeviceProfileGeneric'] || 'Built-in generic profile';
+            let profileOptions = '';
+
+            for (let i = 0; i < profiles.length; i++) {
+                const profile = profiles[i];
+                const suffix = profile.Type === 'User' ? ' [user]' : '';
+                profileOptions += '<option value="' + profile.Id + '">' + profile.Name + suffix + '</option>';
+            }
+
+            overrideSelect.innerHTML = '<option value="">' + autoLabel + '</option>' + profileOptions;
+            fallbackSelect.innerHTML = '<option value="">' + genericLabel + '</option>' + profileOptions;
+            overrideSelect.value = config.OverrideDeviceProfileId || '';
+            fallbackSelect.value = config.FallbackDeviceProfileId || '';
+        });
+    },
+    resolvePlaybackModeValue: function(config) {
+        if (config.PlaybackMode && config.PlaybackMode !== 'Auto') {
+            return config.PlaybackMode;
+        }
+
+        if (config.DisableDlnaTranscoding || config.ForceDirectPlay) {
+            return 'DirectPlayOnly';
+        }
+
+        return 'Auto';
     },
     getDefaultTitleBrowsePresets: function() {
         return [
@@ -1306,6 +1445,11 @@ const DlnaConfigurationPage = {
                     config.EnableExtras = page.querySelector('#enableExtras').checked;
                     config.EnableQuestCompatibilityMode = page.querySelector('#enableQuestCompatibilityMode').checked;
                     config.EnsurePlaybackUrlsInBrowse = page.querySelector('#ensurePlaybackUrlsInBrowse').checked;
+                    config.OverrideDeviceProfileId = page.querySelector('#overrideDeviceProfileId').value || null;
+                    config.FallbackDeviceProfileId = page.querySelector('#fallbackDeviceProfileId').value || null;
+                    config.PlaybackMode = page.querySelector('#playbackMode').value;
+                    config.DisableDlnaTranscoding = false;
+                    config.ForceDirectPlay = false;
                     config.ChildCountCalculation = page.querySelector('#childCountCalculation').value;
                     config.EnableChildCountCache = page.querySelector('#enableChildCountCache').checked;
                     config.EnableBrowseResponseCache = page.querySelector('#enableBrowseResponseCache').checked;
@@ -1324,6 +1468,11 @@ const DlnaConfigurationPage = {
                     config.EnableVirtualFolderIndex = page.querySelector('#enableVirtualFolderIndex').checked;
                     config.WarmupIndexOnStartup = page.querySelector('#warmupIndexOnStartup').checked;
                     config.PrewarmBrowseResponses = page.querySelector('#prewarmBrowseResponses').checked;
+                    config.PrewarmAfterLibraryRebuild = page.querySelector('#prewarmAfterLibraryRebuild').checked;
+                    config.EnableScheduledPrewarm = page.querySelector('#enableScheduledPrewarm').checked;
+                    config.PrewarmScope = page.querySelector('#prewarmScope').value;
+                    config.MaxPrewarmResponsesPerRun = parseInt(page.querySelector('#maxPrewarmResponsesPerRun').value) || 150;
+                    config.PrewarmMinIntervalMinutes = parseInt(page.querySelector('#prewarmMinIntervalMinutes').value) || 60;
                     config.PrewarmFacetItemFolders = page.querySelector('#prewarmFacetItemFolders').checked;
                     config.PrewarmHierarchyFolders = page.querySelector('#prewarmHierarchyFolders').checked;
                     config.PrewarmHierarchyMaxSeries = parseInt(page.querySelector('#prewarmHierarchyMaxSeries').value) || 20;
@@ -1342,9 +1491,15 @@ const DlnaConfigurationPage = {
                     config.EnableIndexRecentlyReleasedEpisodes = page.querySelector('#enableIndexRecentlyReleasedEpisodes').checked;
                     config.EnableIndexRecentlyReleasedSeries = page.querySelector('#enableIndexRecentlyReleasedSeries').checked;
                     config.EnableIndexRecentlyReleasedMovies = page.querySelector('#enableIndexRecentlyReleasedMovies').checked;
+                    config.EnableAutomaticIndexRebuild = page.querySelector('#enableAutomaticIndexRebuild').checked;
                     config.RebuildIndexAfterLibraryScan = page.querySelector('#rebuildIndexAfterLibraryScan').checked;
                     config.DebounceLibraryChangeInvalidation = page.querySelector('#debounceLibraryChangeInvalidation').checked;
-                    config.LibraryChangeDebounceSeconds = parseInt(page.querySelector('#libraryChangeDebounceSeconds').value) || 60;
+                    config.LibraryChangeDebounceSeconds = parseInt(page.querySelector('#libraryChangeDebounceSeconds').value) || 600;
+                    config.SkipIndexWhileServerBusy = page.querySelector('#skipIndexWhileServerBusy').checked;
+                    config.SkipIndexWhenLibraryPathUnavailable = page.querySelector('#skipIndexWhenLibraryPathUnavailable').checked;
+                    config.IndexRebuildRetryMinutes = parseInt(page.querySelector('#indexRebuildRetryMinutes').value) || 10;
+                    config.MinIndexIntervalMinutes = parseInt(page.querySelector('#minIndexIntervalMinutes').value) || 5;
+                    config.LogIndexDetails = page.querySelector('#logIndexDetails').checked;
                     config.EnableRecentlyUpdatedSeries = page.querySelector('#enableRecentlyUpdatedSeries').checked;
                     config.EnableBrowseByStudio = page.querySelector('#enableBrowseByStudio').checked;
                     config.EnableBrowseByTag = page.querySelector('#enableBrowseByTag').checked;

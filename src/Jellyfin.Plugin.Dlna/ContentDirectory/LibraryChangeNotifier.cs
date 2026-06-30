@@ -67,14 +67,14 @@ public sealed class LibraryChangeNotifier : IHostedService
 
         if (!config.InvalidateByLibraryScope)
         {
-            _invalidationService.InvalidateAll("library-item-changed");
+            _invalidationService.ScheduleAllLibrariesInvalidation("library-item-changed");
             return;
         }
 
         var libraryId = LibraryBrowseQueryHelper.ResolveLibraryId(_libraryManager, e.Item);
         if (libraryId == Guid.Empty)
         {
-            _invalidationService.InvalidateAll("library-item-changed-unscoped");
+            _invalidationService.ScheduleAllLibrariesInvalidation("library-item-changed-unscoped");
             return;
         }
 

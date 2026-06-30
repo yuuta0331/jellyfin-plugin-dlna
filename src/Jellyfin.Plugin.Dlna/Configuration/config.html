@@ -395,6 +395,43 @@
                     </div>
 
                     <div class="verticalSection verticalSection-extrabottompadding">
+                        <h2 class="sectionTitle" data-i18n="SectionPlaybackProfiles">Playback &amp; Device Profiles</h2>
+
+                        <div class="selectContainer">
+                            <select is="emby-select" id="overrideDeviceProfileId" label="Force profile for all clients:">
+                                <option value="">Auto-detect from User-Agent</option>
+                            </select>
+                        </div>
+                        <div class="fieldDescription" data-i18n="OverrideDeviceProfileIdHelp">
+                            Overrides User-Agent matching and uses the selected profile for every DLNA stream request.
+                        </div>
+
+                        <div class="selectContainer">
+                            <select is="emby-select" id="fallbackDeviceProfileId" label="Fallback profile:">
+                                <option value="">Built-in generic profile</option>
+                            </select>
+                        </div>
+                        <div class="fieldDescription" data-i18n="FallbackDeviceProfileIdHelp">
+                            Used when no profile matches the client User-Agent. Choose Modern Android for recent phones and TVs.
+                        </div>
+
+                        <div class="selectContainer">
+                            <select is="emby-select" id="playbackMode" label="Playback mode:">
+                                <option value="Auto">Auto</option>
+                                <option value="PreferDirectPlay">Prefer direct play</option>
+                                <option value="DirectPlayOnly">Direct play only</option>
+                            </select>
+                        </div>
+                        <div class="fieldDescription" data-i18n="PlaybackModeHelp">
+                            Direct play only serves original files without FFmpeg remux or transcode. Rebuild the index after changing this setting.
+                        </div>
+
+                        <div class="fieldDescription" data-i18n="DeviceProfilesApiHelp">
+                            Custom profiles can also be managed via the DLNA Profiles API. User profiles are stored under the plugin configuration folder.
+                        </div>
+                    </div>
+
+                    <div class="verticalSection verticalSection-extrabottompadding">
                         <h2 class="sectionTitle" data-i18n="SectionBrowseCache">Response Caching</h2>
 
                         <div class="checkboxContainer">
@@ -615,10 +652,54 @@
 
                         <div class="inputContainer">
                             <input is="emby-input" type="number" id="prewarmHierarchyMaxSeasonsPerSeries" label="Prewarm max seasons per series:" />
-                            <div class="fieldDescription" data-i18n="PrewarmHierarchyMaxSeasonsPerSeriesHelp">
-                                Maximum seasons per series to prewarm.
+                        <div class="fieldDescription" data-i18n="PrewarmHierarchyMaxSeasonsPerSeriesHelp">
+                            Maximum seasons per series to prewarm.
+                        </div>
+
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="prewarmAfterLibraryRebuild" />
+                                <span data-i18n="PrewarmAfterLibraryRebuild">Prewarm after automatic index rebuild</span>
+                            </label>
+                        </div>
+                        <div class="fieldDescription" data-i18n="PrewarmAfterLibraryRebuildHelp">
+                            When enabled, pre-generates Browse XML after debounced library rebuilds. Keep off on busy servers.
+                        </div>
+
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableScheduledPrewarm" />
+                                <span data-i18n="EnableScheduledPrewarm">Enable scheduled nightly prewarm</span>
+                            </label>
+                        </div>
+                        <div class="fieldDescription" data-i18n="EnableScheduledPrewarmHelp">
+                            Runs a low-priority prewarm task daily at 3:00 AM when the server is idle.
+                        </div>
+
+                        <div class="inputContainer">
+                            <select is="emby-select" id="prewarmScope" label="Prewarm scope:">
+                                <option value="Minimal">Minimal (Quest)</option>
+                                <option value="Full">Full</option>
+                            </select>
+                            <div class="fieldDescription" data-i18n="PrewarmScopeHelp">
+                                Minimal prewarms root, libraries, and first-page series/movies lists only.
                             </div>
                         </div>
+
+                        <div class="inputContainer">
+                            <input is="emby-input" type="number" id="maxPrewarmResponsesPerRun" label="Max prewarm responses per run:" />
+                            <div class="fieldDescription" data-i18n="MaxPrewarmResponsesPerRunHelp">
+                                Caps how many Browse responses are generated in one prewarm run.
+                            </div>
+                        </div>
+
+                        <div class="inputContainer">
+                            <input is="emby-input" type="number" id="prewarmMinIntervalMinutes" label="Minimum minutes between prewarm runs:" />
+                            <div class="fieldDescription" data-i18n="PrewarmMinIntervalMinutesHelp">
+                                Prevents back-to-back prewarm runs from overloading the server.
+                            </div>
+                        </div>
+                    </div>
                     </div>
 
                     <div class="verticalSection verticalSection-extrabottompadding">
@@ -777,29 +858,83 @@
 
                         <div class="checkboxContainer">
                             <label>
+                                <input type="checkbox" is="emby-checkbox" id="enableAutomaticIndexRebuild" />
+                                <span data-i18n="EnableAutomaticIndexRebuild">Enable automatic index rebuild after library changes</span>
+                            </label>
+                        </div>
+                        <div class="fieldDescription" data-i18n="EnableAutomaticIndexRebuildHelp">
+                            Rebuilds indexes after library changes settle (debounced). Recommended off on busy servers.
+                        </div>
+
+                        <div class="checkboxContainer">
+                            <label>
                                 <input type="checkbox" is="emby-checkbox" id="rebuildIndexAfterLibraryScan" />
-                                <span data-i18n="RebuildIndexAfterLibraryScan">Rebuild index after library changes</span>
+                                <span data-i18n="RebuildIndexAfterLibraryScan">Legacy: rebuild index after library changes</span>
                             </label>
                         </div>
                         <div class="fieldDescription" data-i18n="RebuildIndexAfterLibraryScanHelp">
-                            Rebuilds the index when media libraries are updated.
+                            Kept for compatibility. Either this or automatic rebuild enables debounced index rebuilds.
                         </div>
 
                         <div class="checkboxContainer">
                             <label>
                                 <input type="checkbox" is="emby-checkbox" id="debounceLibraryChangeInvalidation" />
-                                <span data-i18n="DebounceLibraryChangeInvalidation">Debounce cache invalidation</span>
+                                <span data-i18n="DebounceLibraryChangeInvalidation">Debounce library change processing</span>
                             </label>
                         </div>
                         <div class="fieldDescription" data-i18n="DebounceLibraryChangeInvalidationHelp">
-                            Waits before clearing caches during rapid library changes.
+                            Waits until library changes settle before rebuilding indexes or clearing caches.
                         </div>
 
                         <div class="inputContainer">
                             <input is="emby-input" type="number" id="libraryChangeDebounceSeconds" label="Library change debounce (seconds):" />
                             <div class="fieldDescription" data-i18n="LibraryChangeDebounceSecondsHelp">
-                                Seconds to wait before invalidating caches after a library change.
+                                Seconds to wait after the last library change before processing (default 600 = 10 minutes).
                             </div>
+                        </div>
+
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="skipIndexWhileServerBusy" />
+                                <span data-i18n="SkipIndexWhileServerBusy">Skip index work while Jellyfin tasks are running</span>
+                            </label>
+                        </div>
+                        <div class="fieldDescription" data-i18n="SkipIndexWhileServerBusyHelp">
+                            Defers DLNA index rebuilds while library scans, database optimization, trickplay, and similar tasks run.
+                        </div>
+
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="skipIndexWhenLibraryPathUnavailable" />
+                                <span data-i18n="SkipIndexWhenLibraryPathUnavailable">Skip index when library paths are unavailable</span>
+                            </label>
+                        </div>
+                        <div class="fieldDescription" data-i18n="SkipIndexWhenLibraryPathUnavailableHelp">
+                            Defers rebuilds when NAS or library folders are temporarily offline.
+                        </div>
+
+                        <div class="inputContainer">
+                            <input is="emby-input" type="number" id="indexRebuildRetryMinutes" label="Index rebuild retry interval (minutes):" />
+                            <div class="fieldDescription" data-i18n="IndexRebuildRetryMinutesHelp">
+                                How long to wait before retrying a deferred index rebuild.
+                            </div>
+                        </div>
+
+                        <div class="inputContainer">
+                            <input is="emby-input" type="number" id="minIndexIntervalMinutes" label="Minimum minutes between index runs:" />
+                            <div class="fieldDescription" data-i18n="MinIndexIntervalMinutesHelp">
+                                Prevents back-to-back automatic index rebuilds.
+                            </div>
+                        </div>
+
+                        <div class="checkboxContainer">
+                            <label>
+                                <input type="checkbox" is="emby-checkbox" id="logIndexDetails" />
+                                <span data-i18n="LogIndexDetails">Log detailed index activity</span>
+                            </label>
+                        </div>
+                        <div class="fieldDescription" data-i18n="LogIndexDetailsHelp">
+                            Emits verbose logs for dirty-library tracking and rebuild scheduling.
                         </div>
                     </div>
 

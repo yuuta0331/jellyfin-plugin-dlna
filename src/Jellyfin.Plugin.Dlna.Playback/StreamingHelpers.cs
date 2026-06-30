@@ -21,7 +21,10 @@ using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.Streaming;
 using MediaBrowser.Model.Dlna;
 using MediaBrowser.Model.Dto;
+using MediaBrowser.Model.Entities;
+using MediaBrowser.Model.Session;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Primitives;
@@ -90,6 +93,12 @@ public static class StreamingHelpers
             throw new ResourceNotFoundException(nameof(httpRequest.Path));
         }
 
+        if (!string.IsNullOrWhiteSpace(streamingRequest.Container))
+        {
+            streamingRequest.Container = DlnaStreamContainerNormalizer.NormalizeRouteContainer(streamingRequest.Container)
+                ?? streamingRequest.Container;
+        }
+
         TryApplyBareDlnaStreamRequest(
             streamingRequest,
             httpRequest,
@@ -99,7 +108,9 @@ public static class StreamingHelpers
             dlnaManager,
             userManager);
 
-        var url = httpRequest.Path.Value.AsSpan().RightPart('.').ToString();
+        var url = DlnaStreamContainerNormalizer.NormalizeRouteContainer(
+            httpRequest.Path.Value.AsSpan().RightPart('.').ToString())
+            ?? httpRequest.Path.Value.AsSpan().RightPart('.').ToString();
 
         if (string.IsNullOrEmpty(streamingRequest.AudioCodec))
         {
@@ -186,11 +197,15 @@ public static class StreamingHelpers
 
         encodingHelper.AttachMediaSourceInfo(state, encodingOptions, mediaSource, url);
 
-        string? containerInternal = Path.GetExtension(state.RequestedUrl);
-
+        string? containerInternal = null;
         if (!string.IsNullOrEmpty(streamingRequest.Container))
         {
-            containerInternal = streamingRequest.Container;
+            containerInternal = DlnaStreamContainerNormalizer.NormalizeRouteContainer(streamingRequest.Container);
+        }
+
+        if (string.IsNullOrEmpty(containerInternal))
+        {
+            containerInternal = Path.GetExtension(state.RequestedUrl);
         }
 
         if (string.IsNullOrEmpty(containerInternal))
@@ -277,9 +292,27 @@ public static class StreamingHelpers
             ? GetOutputFileExtension(state, mediaSource)
             : ("." + state.OutputContainer);
 
+        EnsureDlnaPlaySessionId(httpRequest, streamingRequest);
         state.OutputFilePath = GetOutputFilePath(state, ext, serverConfigurationManager, streamingRequest.DeviceId, streamingRequest.PlaySessionId);
 
         return state;
+    }
+
+    private static void EnsureDlnaPlaySessionId(HttpRequest httpRequest, StreamingRequestDto streamingRequest)
+    {
+        if (!IsDlnaStreamPath(httpRequest.Path.Value))
+        {
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(streamingRequest.PlaySessionId) || streamingRequest.Static)
+        {
+            return;
+        }
+
+        // DLNA clients often omit PlaySessionId. Without one, Jellyfin's transcode kill timer
+        // can stop ffmpeg while the client is still reading the progressive output file.
+        streamingRequest.PlaySessionId = Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture);
     }
 
     /// <summary>
@@ -575,33 +608,29 @@ public static class StreamingHelpers
 
     private static void ApplyDeviceProfileSettings(DlnaStreamState state, IDlnaManager dlnaManager, IDeviceManager deviceManager, HttpRequest request, string? deviceProfileId, bool? @static)
     {
+        var profileContext = dlnaManager.ResolveStreamingProfile(request.Headers, deviceProfileId);
+        var profile = profileContext.Profile;
+
         if (!string.IsNullOrWhiteSpace(deviceProfileId))
         {
-            state.DeviceProfile = dlnaManager.GetProfile(deviceProfileId);
-
-            if (state.DeviceProfile is null)
+            var explicitProfile = dlnaManager.GetProfile(deviceProfileId);
+            if (explicitProfile is null)
             {
                 var caps = deviceManager.GetCapabilities(deviceProfileId);
-                state.DeviceProfile = caps is null ? dlnaManager.GetProfile(request.Headers) : caps.DeviceProfile as DlnaDeviceProfile;
+                if (caps?.DeviceProfile is DlnaDeviceProfile capsProfile)
+                {
+                    profile = profileContext.PlaybackMode == DlnaPlaybackMode.DirectPlayOnly
+                        ? DlnaDeviceProfileCloner.WithoutTranscoding(capsProfile)
+                        : capsProfile;
+                }
             }
         }
 
-        var profile = state.DeviceProfile;
+        state.DeviceProfile = profile;
 
         if (profile is null)
         {
-            profile = dlnaManager.GetProfile(request.Headers) as DlnaDeviceProfile;
-            if (profile is null && IsDlnaStreamPath(request.Path.Value))
-            {
-                profile = dlnaManager.GetDefaultProfile();
-            }
-
-            if (profile is null)
-            {
-                return;
-            }
-
-            state.DeviceProfile = profile;
+            return;
         }
 
         var audioCodec = state.ActualOutputAudioCodec;
@@ -892,13 +921,36 @@ public static class StreamingHelpers
 
         foreach (var key in httpRequest.Query.Keys)
         {
-            if (!string.Equals(key, "dlnaheaders", StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(key, "dlnaheaders", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(key, "Static", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(key, "MediaSourceId", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(key, "Tag", StringComparison.OrdinalIgnoreCase))
             {
                 return false;
             }
         }
 
+        if (httpRequest.Query.ContainsKey("Static"))
+        {
+            return false;
+        }
+
         return true;
+    }
+
+    /// <summary>
+    /// Returns true when the raw DLNA stream path contains a comma-separated capability probe container.
+    /// </summary>
+    public static bool IsDlnaCapabilityProbeRequest(HttpRequest httpRequest)
+    {
+        var path = httpRequest.Path.Value;
+        if (!IsDlnaStreamPath(path) || string.IsNullOrWhiteSpace(path))
+        {
+            return false;
+        }
+
+        var routeContainer = path.AsSpan().RightPart('.').ToString();
+        return DlnaStreamContainerNormalizer.IsDlnaCapabilityProbe(routeContainer);
     }
 
     private static void TryApplyBareDlnaStreamRequest(
@@ -921,8 +973,8 @@ public static class StreamingHelpers
             return;
         }
 
-        var profile = dlnaManager.GetProfile(httpRequest.Headers) as DlnaDeviceProfile
-                      ?? dlnaManager.GetDefaultProfile();
+        var profileContext = dlnaManager.ResolveStreamingProfile(httpRequest.Headers);
+        var profile = profileContext.Profile;
 
         User? user = null;
         var userId = httpRequest.HttpContext.User.GetUserId();
@@ -932,33 +984,128 @@ public static class StreamingHelpers
         }
 
         var sources = mediaSourceManager.GetStaticMediaSources(item, true, user).ToArray();
-        var streamBuilder = new StreamBuilder(mediaEncoder, NullLogger.Instance);
 
-        StreamInfo? streamInfo = item.MediaType switch
-        {
-            MediaType.Video => streamBuilder.GetOptimalVideoStream(new MediaOptions
-            {
-                ItemId = item.Id,
-                MediaSources = sources,
-                Profile = profile,
-                DeviceId = streamingRequest.DeviceId,
-                MaxBitrate = profile.MaxStreamingBitrate
-            }),
-            MediaType.Audio => streamBuilder.GetOptimalAudioStream(new MediaOptions
-            {
-                ItemId = item.Id,
-                MediaSources = sources,
-                Profile = profile,
-                DeviceId = streamingRequest.DeviceId
-            }),
-            _ => null
-        };
+        var resolved = ResolveDlnaStream(
+            item.MediaType,
+            mediaEncoder,
+            profile,
+            sources,
+            item.Id,
+            profileContext.PlaybackMode,
+            streamingRequest.DeviceId);
 
-        if (streamInfo is null)
+        if (resolved is null)
         {
             return;
         }
 
-        streamInfo.ApplyToRequest(streamingRequest);
+        resolved.StreamInfo.ApplyToRequest(streamingRequest);
+
+        if (profileContext.PlaybackMode is DlnaPlaybackMode.PreferDirectPlay or DlnaPlaybackMode.DirectPlayOnly
+            && resolved.IsDirectPlay)
+        {
+            streamingRequest.Static = true;
+        }
     }
+
+    /// <summary>
+    /// Applies DirectPlayOnly and PreferDirectPlay guards before transcoding is attempted.
+    /// </summary>
+    public static EarlyPlaybackGuardResult EvaluateEarlyPlaybackGuard(
+        StreamingRequestDto streamingRequest,
+        HttpRequest request,
+        IDlnaManager dlnaManager,
+        ILibraryManager libraryManager,
+        IMediaSourceManager mediaSourceManager,
+        IMediaEncoder mediaEncoder,
+        DlnaStreamState state)
+    {
+        if (streamingRequest.Static)
+        {
+            return new EarlyPlaybackGuardResult();
+        }
+
+        // A comma-separated extension is a client capability probe, not a valid
+        // transcode target. Bare request resolution above may promote compatible
+        // media to static playback; anything still non-static must stop here.
+        if (IsDlnaCapabilityProbeRequest(request))
+        {
+            return UnsupportedMedia("DLNA capability probes cannot be transcoded.");
+        }
+
+        var deviceProfileId = streamingRequest switch
+        {
+            DlnaVideoRequestDto video => video.DeviceProfileId,
+            DlnaStreamingRequestDto audio => audio.DeviceProfileId,
+            _ => null
+        };
+
+        var profileContext = dlnaManager.ResolveStreamingProfile(request.Headers, deviceProfileId);
+
+        if (profileContext.PlaybackMode is DlnaPlaybackMode.PreferDirectPlay or DlnaPlaybackMode.DirectPlayOnly)
+        {
+            var item = libraryManager.GetItemById(streamingRequest.Id);
+            if (item is IHasMediaSources)
+            {
+                var sources = mediaSourceManager.GetStaticMediaSources(item, true, state.User).ToArray();
+                var resolved = ResolveDlnaStream(
+                    item.MediaType,
+                    mediaEncoder,
+                    profileContext.Profile,
+                    sources,
+                    item.Id,
+                    profileContext.PlaybackMode,
+                    streamingRequest.DeviceId);
+
+                if (resolved?.IsDirectPlay == true)
+                {
+                    resolved.StreamInfo.ApplyToRequest(streamingRequest);
+                    return new EarlyPlaybackGuardResult { RequiresStateRefresh = true };
+                }
+            }
+        }
+
+        if (profileContext.PlaybackMode == DlnaPlaybackMode.DirectPlayOnly)
+        {
+            return UnsupportedMedia("Direct play is required but the media is incompatible.");
+        }
+
+        return new EarlyPlaybackGuardResult();
+    }
+
+    private static DlnaResolvedStream? ResolveDlnaStream(
+        MediaType? mediaType,
+        IMediaEncoder mediaEncoder,
+        DlnaDeviceProfile profile,
+        MediaSourceInfo[] sources,
+        Guid itemId,
+        DlnaPlaybackMode playbackMode,
+        string? deviceId)
+        => mediaType switch
+        {
+            MediaType.Video => DlnaStreamResolver.ResolveVideo(
+                mediaEncoder,
+                profile,
+                sources,
+                itemId,
+                playbackMode,
+                deviceId),
+            MediaType.Audio => DlnaStreamResolver.ResolveAudio(
+                mediaEncoder,
+                profile,
+                sources,
+                itemId,
+                playbackMode,
+                deviceId),
+            _ => null
+        };
+
+    private static EarlyPlaybackGuardResult UnsupportedMedia(string message)
+        => new()
+        {
+            EarlyResponse = new ObjectResult(message)
+            {
+                StatusCode = StatusCodes.Status415UnsupportedMediaType
+            }
+        };
 }

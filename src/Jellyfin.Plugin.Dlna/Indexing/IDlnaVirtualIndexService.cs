@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -36,6 +37,14 @@ public interface IDlnaVirtualIndexService
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task.</returns>
     Task RebuildLibraryAsync(Guid libraryId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Attempts to rebuild indexes for multiple libraries without blocking when another rebuild is running.
+    /// </summary>
+    /// <param name="libraryIds">Library ids to rebuild.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Library ids that were rebuilt, or an empty list when skipped.</returns>
+    Task<IReadOnlyList<Guid>> TryRebuildLibrariesAsync(IReadOnlyList<Guid> libraryIds, CancellationToken cancellationToken);
 
     /// <summary>
     /// Invalidates all indexes.

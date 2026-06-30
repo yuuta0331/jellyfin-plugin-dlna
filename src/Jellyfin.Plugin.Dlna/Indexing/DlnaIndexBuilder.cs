@@ -8,11 +8,15 @@ using Jellyfin.Data.Enums;
 using Jellyfin.Plugin.Dlna.Configuration;
 using Jellyfin.Plugin.Dlna.ContentDirectory;
 using Jellyfin.Plugin.Dlna.Didl;
+using Jellyfin.Plugin.Dlna.Model;
+using MediaBrowser.Model.Dlna;
 using MediaBrowser.Controller.Drawing;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
+using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Model.Entities;
+using MediaBrowser.Model.MediaInfo;
 using MediaBrowser.Model.Querying;
 using Microsoft.Extensions.Logging;
 
@@ -26,17 +30,26 @@ internal sealed class DlnaIndexBuilder
     private readonly ILibraryManager _libraryManager;
     private readonly IVirtualIndexStore _store;
     private readonly IImageProcessor _imageProcessor;
+    private readonly IMediaSourceManager _mediaSourceManager;
+    private readonly IMediaEncoder _mediaEncoder;
+    private readonly IDlnaManager _dlnaManager;
     private readonly ILogger<DlnaIndexBuilder> _logger;
 
     public DlnaIndexBuilder(
         ILibraryManager libraryManager,
         IVirtualIndexStore store,
         IImageProcessor imageProcessor,
+        IMediaSourceManager mediaSourceManager,
+        IMediaEncoder mediaEncoder,
+        IDlnaManager dlnaManager,
         ILogger<DlnaIndexBuilder> logger)
     {
         _libraryManager = libraryManager;
         _store = store;
         _imageProcessor = imageProcessor;
+        _mediaSourceManager = mediaSourceManager;
+        _mediaEncoder = mediaEncoder;
+        _dlnaManager = dlnaManager;
         _logger = logger;
     }
 
@@ -86,7 +99,7 @@ internal sealed class DlnaIndexBuilder
 
         foreach (var item in summaryItems)
         {
-            var summary = ToSummary(item);
+            var summary = ToSummary(item, config);
             DlnaImageResolver.PopulateSummaryImages(item, summary, _imageProcessor, _libraryManager, _logger);
             summaries.Add(summary);
         }
@@ -242,8 +255,9 @@ internal sealed class DlnaIndexBuilder
         return _libraryManager.GetItemsResult(query).Items;
     }
 
-    private static ItemSummaryRecord ToSummary(BaseItem item)
-        => new()
+    private ItemSummaryRecord ToSummary(BaseItem item, DlnaPluginConfiguration config)
+    {
+        var summary = new ItemSummaryRecord
         {
             ItemId = item.Id,
             ItemType = item.GetBaseItemKind(),
@@ -257,6 +271,62 @@ internal sealed class DlnaIndexBuilder
             IsFolder = item.IsFolder || item.IsDisplayedAsFolder,
             DateModifiedTicks = item.DateModified.Ticks
         };
+
+        if (item is not IHasMediaSources)
+        {
+            return summary;
+        }
+
+        var sources = _mediaSourceManager.GetStaticMediaSources(item, true, null).ToArray();
+        var mediaSource = sources.FirstOrDefault();
+        if (mediaSource is null)
+        {
+            return summary;
+        }
+
+        summary.Container = mediaSource.Container;
+        summary.RunTimeTicks = mediaSource.RunTimeTicks;
+        summary.FileSize = mediaSource.Size;
+        summary.MediaSourceId = mediaSource.Id;
+        summary.MediaSourceTag = mediaSource.ETag;
+        summary.TotalBitrate = mediaSource.Bitrate;
+
+        var videoStream = mediaSource.VideoStream;
+        if (videoStream is not null)
+        {
+            summary.VideoWidth = videoStream.Width;
+            summary.VideoHeight = videoStream.Height;
+            summary.VideoCodec = videoStream.Codec;
+        }
+
+        var audioStream = mediaSource.GetDefaultAudioStream(null);
+        if (audioStream is not null)
+        {
+            summary.AudioCodec = audioStream.Codec;
+        }
+
+        var profile = !string.IsNullOrWhiteSpace(config.FallbackDeviceProfileId)
+            ? _dlnaManager.GetProfile(config.FallbackDeviceProfileId) ?? _dlnaManager.GetDefaultProfile()
+            : _dlnaManager.GetDefaultProfile();
+
+        var profileType = item.MediaType switch
+        {
+            MediaType.Video => DlnaProfileType.Video,
+            MediaType.Audio => DlnaProfileType.Audio,
+            _ => (DlnaProfileType?)null
+        };
+
+        if (profileType is not null)
+        {
+            var effectiveProfile = DlnaDeviceProfileCloner.WithoutTranscoding(profile);
+            summary.SupportsDirectPlay = DlnaDirectPlayHeuristic.SupportsDirectPlay(
+                effectiveProfile,
+                mediaSource,
+                profileType.Value);
+        }
+
+        return summary;
+    }
 
     private static DateTime GetModifiedDate(BaseItem item) => item.DateModified;
 

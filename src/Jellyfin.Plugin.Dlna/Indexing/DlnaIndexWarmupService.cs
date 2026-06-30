@@ -1,38 +1,43 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.Dlna.Indexing;
+using MediaBrowser.Controller.Library;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.Dlna.Indexing;
 
 /// <summary>
-/// Warms up DLNA virtual indexes on server startup.
+/// Warms up DLNA virtual indexes on server startup for libraries that are not yet indexed.
 /// </summary>
 public sealed class DlnaIndexWarmupService : IHostedService
 {
+    private readonly ILibraryManager _libraryManager;
     private readonly IDlnaVirtualIndexService _indexService;
-    private readonly IDlnaBrowsePrewarmService _prewarmService;
+    private readonly DlnaServerLoadGuard _loadGuard;
     private readonly ILogger<DlnaIndexWarmupService> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DlnaIndexWarmupService"/> class.
     /// </summary>
     public DlnaIndexWarmupService(
+        ILibraryManager libraryManager,
         IDlnaVirtualIndexService indexService,
-        IDlnaBrowsePrewarmService prewarmService,
+        DlnaServerLoadGuard loadGuard,
         ILogger<DlnaIndexWarmupService> logger)
     {
+        _libraryManager = libraryManager;
         _indexService = indexService;
-        _prewarmService = prewarmService;
+        _loadGuard = loadGuard;
         _logger = logger;
     }
 
     /// <inheritdoc />
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        var config = DlnaPlugin.Instance.Configuration;
+        var config = DlnaConfigurationAccessor.Current;
         if (!config.WarmupIndexOnStartup)
         {
             return Task.CompletedTask;
@@ -42,10 +47,32 @@ public sealed class DlnaIndexWarmupService : IHostedService
         {
             try
             {
-                _logger.LogInformation("DLNA index warmup started");
-                await _indexService.RebuildAllAsync(null, cancellationToken).ConfigureAwait(false);
-                await _prewarmService.PrewarmAsync(null, cancellationToken).ConfigureAwait(false);
-                _logger.LogInformation("DLNA index warmup completed");
+                if (!_loadGuard.CanRunIndexWork())
+                {
+                    _logger.LogInformation("DLNA index warmup deferred: server busy or minimum interval not elapsed");
+                    return;
+                }
+
+                var libraries = _libraryManager.GetUserRootFolder().Children
+                    .Where(LibraryBrowseQueryHelper.IsDlnaLibraryView)
+                    .Where(library => !_indexService.IsReady(library.Id))
+                    .Select(library => library.Id)
+                    .ToList();
+
+                if (libraries.Count == 0)
+                {
+                    _logger.LogInformation("DLNA index warmup skipped: all libraries already indexed");
+                    return;
+                }
+
+                _logger.LogInformation("DLNA index warmup started for {LibraryCount} libraries", libraries.Count);
+                var rebuilt = await _indexService.TryRebuildLibrariesAsync(libraries, cancellationToken).ConfigureAwait(false);
+                if (rebuilt.Count > 0)
+                {
+                    _loadGuard.RecordIndexWorkCompleted();
+                }
+
+                _logger.LogInformation("DLNA index warmup completed Libraries={LibraryCount}", rebuilt.Count);
             }
             catch (OperationCanceledException)
             {

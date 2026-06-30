@@ -1,0 +1,98 @@
+<?xml version="1.0"?>
+<Profile xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Name>Modern Android</Name>
+  <Identification>
+    <Headers>
+      <HttpHeaderInfo name="User-Agent" value="Android" match="Substring" />
+      <HttpHeaderInfo name="User-Agent" value="Dalvik" match="Substring" />
+    </Headers>
+  </Identification>
+  <Manufacturer>Jellyfin</Manufacturer>
+  <ManufacturerUrl>https://github.com/jellyfin/jellyfin</ManufacturerUrl>
+  <ModelName>Jellyfin Server</ModelName>
+  <ModelDescription>UPnP/AV 1.0 Compliant Media Server</ModelDescription>
+  <ModelNumber>01</ModelNumber>
+  <ModelUrl>https://github.com/jellyfin/jellyfin</ModelUrl>
+  <EnableAlbumArtInDidl>false</EnableAlbumArtInDidl>
+  <EnableSingleAlbumArtLimit>true</EnableSingleAlbumArtLimit>
+  <EnableSingleSubtitleLimit>true</EnableSingleSubtitleLimit>
+  <SupportedMediaTypes>Audio,Photo,Video</SupportedMediaTypes>
+  <AlbumArtPn>JPEG_SM</AlbumArtPn>
+  <MaxAlbumArtWidth>480</MaxAlbumArtWidth>
+  <MaxAlbumArtHeight>480</MaxAlbumArtHeight>
+  <MaxIconWidth>48</MaxIconWidth>
+  <MaxIconHeight>48</MaxIconHeight>
+  <MaxStreamingBitrate>200000000</MaxStreamingBitrate>
+  <MaxStaticBitrate>200000000</MaxStaticBitrate>
+  <MusicStreamingTranscodingBitrate>192000</MusicStreamingTranscodingBitrate>
+  <MaxStaticMusicBitrate xsi:nil="true" />
+  <ProtocolInfo>http-get:*:video/mpeg:*,http-get:*:video/mp4:*,http-get:*:video/3gpp:*,http-get:*:video/vnd.dlna.mpeg-tts:*,http-get:*:video/avi:*,http-get:*:video/x-matroska:*,http-get:*:video/webm:*,http-get:*:video/x-ms-wmv:*,http-get:*:video/wtv:*,http-get:*:audio/mpeg:*,http-get:*:audio/mp3:*,http-get:*:audio/aac:*,http-get:*:audio/mp4:*,http-get:*:audio/flac:*,http-get:*:audio/ogg:*,http-get:*:audio/x-ms-wma:*,http-get:*:audio/wav:*,http-get:*:audio/amr:*,http-get:*:audio/L16:*,http-get:*:image/jpeg:*,http-get:*:image/png:*,http-get:*:image/bmp:*,http-get:*:image/gif:*,http-get:*:image/webp:*,http-get:*:image/heic:*,http-get:*:image/heif:*,http-get:*:image/avif:*,http-get:*:image/tiff:*</ProtocolInfo>
+  <TimelineOffsetSeconds>0</TimelineOffsetSeconds>
+  <RequiresPlainVideoItems>false</RequiresPlainVideoItems>
+  <RequiresPlainFolders>false</RequiresPlainFolders>
+  <EnableMSMediaReceiverRegistrar>false</EnableMSMediaReceiverRegistrar>
+  <IgnoreTranscodeByteRangeRequests>false</IgnoreTranscodeByteRangeRequests>
+  <XmlRootAttributes />
+  <DirectPlayProfiles>
+    <DirectPlayProfile container="mp4,m4v,mov" audioCodec="aac,ac3,eac3,mp3,opus,vorbis,flac" videoCodec="h263,h264,hevc,mpeg4,vp9,av1,apv" type="Video" />
+    <DirectPlayProfile container="3gp,3g2" audioCodec="aac,amrnb,amr_nb,amrwb,amr_wb" videoCodec="h263,h264,mpeg4" type="Video" />
+    <DirectPlayProfile container="mkv" audioCodec="aac,ac3,eac3,mp3,opus,vorbis,flac,dts,truehd" videoCodec="h263,h264,hevc,av1,vp8,vp9" type="Video" />
+    <DirectPlayProfile container="webm" audioCodec="opus,vorbis" videoCodec="vp8,vp9,av1" type="Video" />
+    <DirectPlayProfile container="ts,mpegts" audioCodec="aac,ac3,mp3" videoCodec="h264,hevc" type="Video" />
+    <DirectPlayProfile container="mp3" audioCodec="mp2,mp3" type="Audio" />
+    <DirectPlayProfile container="aac" audioCodec="aac" type="Audio" />
+    <DirectPlayProfile container="m4a,mp4" audioCodec="aac,mp3,opus,vorbis,flac" type="Audio" />
+    <DirectPlayProfile container="flac" audioCodec="flac" type="Audio" />
+    <DirectPlayProfile container="ogg,oga,opus" audioCodec="vorbis,opus,flac" type="Audio" />
+    <DirectPlayProfile container="wav" audioCodec="pcm,pcm_s16le,pcm_s24le,pcm_s32le,pcm_f32le" type="Audio" />
+    <DirectPlayProfile container="amr" audioCodec="amrnb,amr_nb,amrwb,amr_wb" type="Audio" />
+    <DirectPlayProfile container="jpeg,jpg,png,bmp,gif,webp,heic,heif,avif" type="Photo" />
+  </DirectPlayProfiles>
+  <TranscodingProfiles>
+    <TranscodingProfile container="mp3" type="Audio" audioCodec="mp3" estimateContentLength="false" enableMpegtsM2TsMode="false" transcodeSeekInfo="Auto" copyTimestamps="false" context="Streaming" enableSubtitlesInManifest="false" minSegments="0" segmentLength="0" breakOnNonKeyFrames="false" />
+    <TranscodingProfile container="ts" type="Video" videoCodec="h264" audioCodec="aac" estimateContentLength="false" enableMpegtsM2TsMode="false" transcodeSeekInfo="Auto" copyTimestamps="false" context="Streaming" enableSubtitlesInManifest="false" minSegments="0" segmentLength="0" breakOnNonKeyFrames="false" />
+    <TranscodingProfile container="mp4" type="Video" videoCodec="h264" audioCodec="aac" estimateContentLength="false" enableMpegtsM2TsMode="false" transcodeSeekInfo="Auto" copyTimestamps="false" context="Streaming" enableSubtitlesInManifest="false" minSegments="0" segmentLength="0" breakOnNonKeyFrames="false" />
+    <TranscodingProfile container="jpeg" type="Photo" estimateContentLength="false" enableMpegtsM2TsMode="false" transcodeSeekInfo="Auto" copyTimestamps="false" context="Streaming" enableSubtitlesInManifest="false" minSegments="0" segmentLength="0" breakOnNonKeyFrames="false" />
+  </TranscodingProfiles>
+  <ContainerProfiles />
+  <CodecProfiles>
+    <CodecProfile type="Video" codec="h264,hevc,av1">
+      <Conditions>
+        <ProfileCondition condition="LessThanEqual" property="Width" value="7680" isRequired="true" />
+        <ProfileCondition condition="LessThanEqual" property="Height" value="4320" isRequired="true" />
+        <ProfileCondition condition="LessThanEqual" property="VideoBitrate" value="200000000" isRequired="true" />
+      </Conditions>
+      <ApplyConditions />
+    </CodecProfile>
+  </CodecProfiles>
+  <ResponseProfiles>
+    <ResponseProfile container="mp4,m4v" type="Video" mimeType="video/mp4" />
+    <ResponseProfile container="mov" type="Video" mimeType="video/mp4" />
+    <ResponseProfile container="3gp,3g2" type="Video" mimeType="video/3gpp" />
+    <ResponseProfile container="mkv" type="Video" mimeType="video/x-matroska" />
+    <ResponseProfile container="webm" type="Video" mimeType="video/webm" />
+    <ResponseProfile container="ts" type="Video" mimeType="video/vnd.dlna.mpeg-tts" />
+    <ResponseProfile container="mp3" type="Audio" mimeType="audio/mpeg" />
+    <ResponseProfile container="aac" type="Audio" mimeType="audio/aac" />
+    <ResponseProfile container="m4a,mp4" type="Audio" mimeType="audio/mp4" />
+    <ResponseProfile container="flac" type="Audio" mimeType="audio/flac" />
+    <ResponseProfile container="ogg,oga,opus" type="Audio" mimeType="audio/ogg" />
+    <ResponseProfile container="wav" type="Audio" mimeType="audio/wav" />
+    <ResponseProfile container="amr" type="Audio" mimeType="audio/amr" />
+    <ResponseProfile container="jpeg,jpg" type="Photo" mimeType="image/jpeg" />
+    <ResponseProfile container="png" type="Photo" mimeType="image/png" />
+    <ResponseProfile container="bmp" type="Photo" mimeType="image/bmp" />
+    <ResponseProfile container="gif" type="Photo" mimeType="image/gif" />
+    <ResponseProfile container="webp" type="Photo" mimeType="image/webp" />
+    <ResponseProfile container="heic" type="Photo" mimeType="image/heic" />
+    <ResponseProfile container="heif" type="Photo" mimeType="image/heif" />
+    <ResponseProfile container="avif" type="Photo" mimeType="image/avif" />
+  </ResponseProfiles>
+  <SubtitleProfiles>
+    <SubtitleProfile format="srt" method="External" />
+    <SubtitleProfile format="vtt" method="External" />
+    <SubtitleProfile format="ass" method="External" />
+    <SubtitleProfile format="ssa" method="External" />
+  </SubtitleProfiles>
+</Profile>

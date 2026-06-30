@@ -1,4 +1,5 @@
 using System;
+using Jellyfin.Plugin.Dlna.Model;
 using MediaBrowser.Model.Plugins;
 
 namespace Jellyfin.Plugin.Dlna.Configuration;
@@ -157,6 +158,33 @@ public class DlnaPluginConfiguration : BasePluginConfiguration
     public bool EnableQuestCompatibilityMode { get; set; } = false;
 
     /// <summary>
+    /// Gets or sets how DLNA playback streams are negotiated.
+    /// </summary>
+    public DlnaPlaybackMode PlaybackMode { get; set; } = DlnaPlaybackMode.Auto;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether DLNA transcoding is disabled for all clients.
+    /// Legacy setting; migrated to <see cref="PlaybackMode"/> on load.
+    /// </summary>
+    public bool DisableDlnaTranscoding { get; set; } = false;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether direct play should be forced for DLNA streams.
+    /// Legacy setting; migrated to <see cref="PlaybackMode"/> on load.
+    /// </summary>
+    public bool ForceDirectPlay { get; set; } = false;
+
+    /// <summary>
+    /// Gets or sets the device profile id to use for all DLNA streaming requests, overriding User-Agent matching.
+    /// </summary>
+    public string? OverrideDeviceProfileId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the device profile id to use when no User-Agent match is found.
+    /// </summary>
+    public string? FallbackDeviceProfileId { get; set; }
+
+    /// <summary>
     /// Gets or sets a value indicating whether browse summaries include playback stream URLs.
     /// </summary>
     public bool EnsurePlaybackUrlsInBrowse { get; set; } = true;
@@ -214,12 +242,17 @@ public class DlnaPluginConfiguration : BasePluginConfiguration
     /// <summary>
     /// Gets or sets a value indicating whether to rebuild indexes after library changes.
     /// </summary>
-    public bool RebuildIndexAfterLibraryScan { get; set; } = true;
+    public bool RebuildIndexAfterLibraryScan { get; set; } = false;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to automatically rebuild indexes after debounced library changes.
+    /// </summary>
+    public bool EnableAutomaticIndexRebuild { get; set; } = false;
 
     /// <summary>
     /// Gets or sets a value indicating whether to warm up indexes on startup.
     /// </summary>
-    public bool WarmupIndexOnStartup { get; set; } = true;
+    public bool WarmupIndexOnStartup { get; set; } = false;
 
     /// <summary>
     /// Gets or sets a value indicating whether to prewarm Browse XML responses after indexing.
@@ -239,7 +272,64 @@ public class DlnaPluginConfiguration : BasePluginConfiguration
     /// <summary>
     /// Gets or sets the debounce interval for library change invalidation in seconds.
     /// </summary>
-    public int LibraryChangeDebounceSeconds { get; set; } = 60;
+    public int LibraryChangeDebounceSeconds { get; set; } = 600;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to skip index work while Jellyfin scheduled tasks are running.
+    /// </summary>
+    public bool SkipIndexWhileServerBusy { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to skip index work when library paths are unavailable.
+    /// </summary>
+    public bool SkipIndexWhenLibraryPathUnavailable { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets minutes to wait before retrying a deferred index rebuild.
+    /// </summary>
+    public int IndexRebuildRetryMinutes { get; set; } = 10;
+
+    /// <summary>
+    /// Gets or sets the minimum minutes between automatic index rebuild runs.
+    /// </summary>
+    public int MinIndexIntervalMinutes { get; set; } = 5;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to prewarm Browse responses after an automatic index rebuild.
+    /// </summary>
+    public bool PrewarmAfterLibraryRebuild { get; set; } = false;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether scheduled nightly prewarm is enabled.
+    /// </summary>
+    public bool EnableScheduledPrewarm { get; set; } = false;
+
+    /// <summary>
+    /// Gets or sets the minimum minutes between prewarm runs.
+    /// </summary>
+    public int PrewarmMinIntervalMinutes { get; set; } = 60;
+
+    /// <summary>
+    /// Gets or sets the maximum Browse responses generated per prewarm run.
+    /// </summary>
+    public int MaxPrewarmResponsesPerRun { get; set; } = 150;
+
+    /// <summary>
+    /// Gets or sets which Browse paths are pre-generated during prewarm.
+    /// </summary>
+    public PrewarmScope PrewarmScope { get; set; } = PrewarmScope.Minimal;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to emit verbose index rebuild logs.
+    /// </summary>
+    public bool LogIndexDetails { get; set; } = false;
+
+    /// <summary>
+    /// Returns whether automatic index rebuild after library changes is enabled.
+    /// </summary>
+    /// <returns>True when either automatic or legacy rebuild setting is enabled.</returns>
+    public bool ShouldAutomaticallyRebuildIndex()
+        => EnableAutomaticIndexRebuild || RebuildIndexAfterLibraryScan;
 
     /// <summary>
     /// Gets or sets a value indicating whether to index recently added episodes.
@@ -460,5 +550,23 @@ public class DlnaPluginConfiguration : BasePluginConfiguration
     /// Gets or sets a value indicating whether to emit verbose DLNA debug logs.
     /// </summary>
     public bool EnableDebugLogging { get; set; } = false;
+
+    /// <summary>
+    /// Gets the effective playback mode, applying legacy flag migration.
+    /// </summary>
+    public DlnaPlaybackMode GetEffectivePlaybackMode()
+    {
+        if (PlaybackMode != DlnaPlaybackMode.Auto)
+        {
+            return PlaybackMode;
+        }
+
+        if (DisableDlnaTranscoding || ForceDirectPlay)
+        {
+            return DlnaPlaybackMode.DirectPlayOnly;
+        }
+
+        return DlnaPlaybackMode.Auto;
+    }
 }
 

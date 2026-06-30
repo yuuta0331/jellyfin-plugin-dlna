@@ -47,6 +47,6 @@ public sealed class DlnaPluginConfigurationMonitor : IHostedService
     {
         _debugState.SyncFrom(DlnaPlugin.Instance.Configuration);
         _logger.LogInformation("DLNA plugin configuration updated; invalidating caches and indexes");
-        _invalidationService.InvalidateAll("plugin configuration updated");
+        _invalidationService.InvalidateCachesAndScheduleRebuild("plugin configuration updated");
     }
 }

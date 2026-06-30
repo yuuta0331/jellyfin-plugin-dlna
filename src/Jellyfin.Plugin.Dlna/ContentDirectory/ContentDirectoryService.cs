@@ -115,7 +115,7 @@ public class ContentDirectoryService : BaseService, IContentDirectory
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var profile = _dlna.GetProfile(request.Headers) ?? _dlna.GetDefaultProfile();
+        var profile = _dlna.ResolveStreamingProfile(request.Headers).Profile;
 
         var serverAddress = request.RequestedUrl[..request.RequestedUrl.IndexOf("/dlna", StringComparison.OrdinalIgnoreCase)];
 

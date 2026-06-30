@@ -4,11 +4,13 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Jellyfin.Extensions;
 using Jellyfin.Extensions.Json;
+using Jellyfin.Plugin.Dlna.Configuration;
 using Jellyfin.Plugin.Dlna.Model;
 using Jellyfin.Plugin.Dlna.Profiles;
 using Jellyfin.Plugin.Dlna.Server;
@@ -118,6 +120,46 @@ public class DlnaManager : IDlnaManager
     public DlnaDeviceProfile GetDefaultProfile()
     {
         return _defaultProfile ??= new DefaultProfile();
+    }
+
+    /// <inheritdoc />
+    public DlnaStreamingProfileContext ResolveStreamingProfile(IHeaderDictionary headers, string? deviceProfileId = null)
+    {
+        ArgumentNullException.ThrowIfNull(headers);
+
+        var config = DlnaConfigurationAccessor.Current;
+        DlnaDeviceProfile? profile = null;
+
+        if (!string.IsNullOrWhiteSpace(config.OverrideDeviceProfileId))
+        {
+            profile = GetProfile(config.OverrideDeviceProfileId);
+        }
+        else if (!string.IsNullOrWhiteSpace(deviceProfileId))
+        {
+            profile = GetProfile(deviceProfileId);
+        }
+
+        profile ??= GetProfile(headers);
+
+        if (profile is null && !string.IsNullOrWhiteSpace(config.FallbackDeviceProfileId))
+        {
+            profile = GetProfile(config.FallbackDeviceProfileId);
+        }
+
+        profile ??= GetDefaultProfile();
+
+        var playbackMode = config.GetEffectivePlaybackMode();
+        if (playbackMode == DlnaPlaybackMode.DirectPlayOnly)
+        {
+            profile = DlnaDeviceProfileCloner.WithoutTranscoding(profile);
+        }
+
+        return new DlnaStreamingProfileContext
+        {
+            Profile = profile,
+            ForceDirectPlay = playbackMode == DlnaPlaybackMode.DirectPlayOnly,
+            PlaybackMode = playbackMode
+        };
     }
 
     /// <inheritdoc />
@@ -348,6 +390,7 @@ public class DlnaManager : IDlnaManager
         var namespaceName = GetType().Namespace + ".Profiles.Xml.";
 
         var systemProfilesPath = SystemProfilesPath;
+        Directory.CreateDirectory(systemProfilesPath);
 
         foreach (var name in _assembly.GetManifestResourceNames())
         {
@@ -360,26 +403,49 @@ public class DlnaManager : IDlnaManager
                 systemProfilesPath,
                 Path.GetFileName(name.AsSpan())[namespaceName.Length..]);
 
-            if (File.Exists(path))
+            // System profiles are plugin-owned. Refresh them when the embedded
+            // definition changes while leaving user profiles untouched.
+            using var stream = _assembly.GetManifestResourceStream(name)!;
+            if (File.Exists(path) && HasSameContent(stream, path))
             {
                 continue;
             }
 
-            // The stream should exist as we just got its name from GetManifestResourceNames
-            using (var stream = _assembly.GetManifestResourceStream(name)!)
+            stream.Position = 0;
+            var temporaryPath = path + ".tmp";
+            try
             {
-                Directory.CreateDirectory(systemProfilesPath);
-
                 var fileOptions = AsyncFile.WriteOptions;
-                fileOptions.Mode = FileMode.CreateNew;
+                fileOptions.Mode = FileMode.Create;
                 fileOptions.PreallocationSize = stream.Length;
-                var fileStream = new FileStream(path, fileOptions);
+                var fileStream = new FileStream(temporaryPath, fileOptions);
                 await using (fileStream.ConfigureAwait(false))
                 {
                     await stream.CopyToAsync(fileStream).ConfigureAwait(false);
                 }
+
+                File.Move(temporaryPath, path, true);
+            }
+            finally
+            {
+                File.Delete(temporaryPath);
             }
         }
+    }
+
+    private static bool HasSameContent(Stream embeddedProfile, string path)
+    {
+        using var existingProfile = File.OpenRead(path);
+        if (embeddedProfile.Length != existingProfile.Length)
+        {
+            embeddedProfile.Position = 0;
+            return false;
+        }
+
+        var embeddedHash = SHA256.HashData(embeddedProfile);
+        var existingHash = SHA256.HashData(existingProfile);
+        embeddedProfile.Position = 0;
+        return CryptographicOperations.FixedTimeEquals(embeddedHash, existingHash);
     }
 
     /// <inheritdoc />

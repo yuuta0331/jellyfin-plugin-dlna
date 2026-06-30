@@ -20,18 +20,18 @@ using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.MediaEncoding;
 using MediaBrowser.Controller.Playlists;
 using MediaBrowser.Model.Drawing;
+using MediaBrowser.Model.Dlna;
+using MediaBrowser.Model.Session;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Globalization;
 using MediaBrowser.Model.Net;
 using Microsoft.Extensions.Logging;
 using Episode = MediaBrowser.Controller.Entities.TV.Episode;
 using Genre = MediaBrowser.Controller.Entities.Genre;
-using MediaOptions = MediaBrowser.Model.Dlna.MediaOptions;
 using Movie = MediaBrowser.Controller.Entities.Movies.Movie;
 using MusicAlbum = MediaBrowser.Controller.Entities.Audio.MusicAlbum;
 using Season = MediaBrowser.Controller.Entities.TV.Season;
 using Series = MediaBrowser.Controller.Entities.TV.Series;
-using StreamBuilder = MediaBrowser.Model.Dlna.StreamBuilder;
 using StreamInfo = MediaBrowser.Model.Dlna.StreamInfo;
 using SubtitleDeliveryMethod = MediaBrowser.Model.Dlna.SubtitleDeliveryMethod;
 using SubtitleStreamInfo = MediaBrowser.Model.Dlna.SubtitleStreamInfo;
@@ -245,18 +245,30 @@ public class DidlBuilder
 
     private void AddVideoResource(XmlWriter writer, BaseItem video, string deviceId, Filter filter, StreamInfo? streamInfo = null)
     {
+        var playbackMode = DlnaPlugin.Instance.Configuration.GetEffectivePlaybackMode();
+
         if (streamInfo is null)
         {
-            var sources = _mediaSourceManager.GetStaticMediaSources(video, true, _user);
+            var sources = _mediaSourceManager.GetStaticMediaSources(video, true, _user).ToArray();
+            var resolved = DlnaStreamResolver.ResolveVideo(
+                _mediaEncoder,
+                _profile,
+                sources,
+                video.Id,
+                playbackMode,
+                deviceId,
+                DlnaPluginLog.VerboseDependencyLogger(_logger));
 
-            streamInfo = new StreamBuilder(_mediaEncoder, DlnaPluginLog.VerboseDependencyLogger(_logger)).GetOptimalVideoStream(new MediaOptions
+            if (resolved is null)
             {
-                ItemId = video.Id,
-                MediaSources = sources.ToArray(),
-                Profile = _profile,
-                DeviceId = deviceId,
-                MaxBitrate = _profile.MaxStreamingBitrate
-            }) ?? throw new InvalidOperationException("No optimal video stream found");
+                return;
+            }
+
+            streamInfo = resolved.StreamInfo;
+        }
+        else if (playbackMode == DlnaPlaybackMode.DirectPlayOnly && streamInfo.PlayMethod != PlayMethod.DirectPlay)
+        {
+            return;
         }
 
         var targetWidth = streamInfo.TargetWidth;
@@ -291,9 +303,14 @@ public class DidlBuilder
             streamInfo.TargetVideoCodecTag,
             streamInfo.IsTargetAVC);
 
-        foreach (var contentFeature in contentFeatureList)
+        foreach (var contentFeature in contentFeatureList.Take(playbackMode == DlnaPlaybackMode.DirectPlayOnly ? 1 : int.MaxValue))
         {
-            AddVideoResource(writer, filter, contentFeature, streamInfo);
+            AddVideoResource(writer, filter, contentFeature, streamInfo, playbackMode);
+        }
+
+        if (playbackMode == DlnaPlaybackMode.DirectPlayOnly)
+        {
+            return;
         }
 
         var subtitleProfiles = streamInfo.GetSubtitleProfiles(_mediaEncoder, false, _serverAddress, _accessToken);
@@ -363,20 +380,32 @@ public class DidlBuilder
         return true;
     }
 
-    private void AddVideoResource(XmlWriter writer, Filter filter, string contentFeatures, StreamInfo streamInfo)
+    private void AddVideoResource(XmlWriter writer, Filter filter, string contentFeatures, StreamInfo streamInfo, DlnaPlaybackMode playbackMode)
     {
         writer.WriteStartElement(string.Empty, "res", NsDidl);
 
-        var url = NormalizeDlnaMediaUrl(streamInfo.ToDlnaUrl(_serverAddress, _accessToken));
-
         var mediaSource = streamInfo.MediaSource;
+        var url = streamInfo.PlayMethod == PlayMethod.DirectPlay
+            ? DlnaPlaybackUrlHelper.BuildDirectPlayVideoStreamUrl(
+                _serverAddress,
+                streamInfo.ItemId,
+                streamInfo.Container ?? mediaSource?.Container,
+                streamInfo.MediaSourceId,
+                mediaSource?.ETag)
+            : streamInfo.ToDlnaUrl(_serverAddress, _accessToken);
+
+        url = NormalizeDlnaMediaUrl(url);
 
         if (mediaSource?.RunTimeTicks.HasValue == true)
         {
             writer.WriteAttributeString("duration", TimeSpan.FromTicks(mediaSource.RunTimeTicks.Value).ToString("c", CultureInfo.InvariantCulture));
         }
 
-        if (filter.Contains("res@size"))
+        if (streamInfo.PlayMethod == PlayMethod.DirectPlay && mediaSource?.Size is > 0)
+        {
+            writer.WriteAttributeString("size", mediaSource.Size.Value.ToString(CultureInfo.InvariantCulture));
+        }
+        else if (filter.Contains("res@size"))
         {
             if (streamInfo.IsDirectStream || streamInfo.EstimateContentLength)
             {
@@ -815,31 +844,56 @@ public class DidlBuilder
 
     private void AddAudioResource(XmlWriter writer, BaseItem audio, string deviceId, Filter filter, StreamInfo? streamInfo = null)
     {
-        writer.WriteStartElement(string.Empty, "res", NsDidl);
+        var playbackMode = DlnaPlugin.Instance.Configuration.GetEffectivePlaybackMode();
 
         if (streamInfo is null)
         {
-            var sources = _mediaSourceManager.GetStaticMediaSources(audio, true, _user);
+            var sources = _mediaSourceManager.GetStaticMediaSources(audio, true, _user).ToArray();
+            var resolved = DlnaStreamResolver.ResolveAudio(
+                _mediaEncoder,
+                _profile,
+                sources,
+                audio.Id,
+                playbackMode,
+                deviceId,
+                DlnaPluginLog.VerboseDependencyLogger(_logger));
 
-            streamInfo = new StreamBuilder(_mediaEncoder, DlnaPluginLog.VerboseDependencyLogger(_logger)).GetOptimalAudioStream(new MediaOptions
+            if (resolved is null)
             {
-                ItemId = audio.Id,
-                MediaSources = sources.ToArray(),
-                Profile = _profile,
-                DeviceId = deviceId
-            }) ?? throw new InvalidOperationException("No optimal audio stream found");
+                return;
+            }
+
+            streamInfo = resolved.StreamInfo;
+        }
+        else if (playbackMode == DlnaPlaybackMode.DirectPlayOnly && streamInfo.PlayMethod != PlayMethod.DirectPlay)
+        {
+            return;
         }
 
-        var url = NormalizeDlnaMediaUrl(streamInfo.ToDlnaUrl(_serverAddress, _accessToken));
-
         var mediaSource = streamInfo.MediaSource;
+        var url = streamInfo.PlayMethod == PlayMethod.DirectPlay
+            ? DlnaPlaybackUrlHelper.BuildDirectPlayAudioStreamUrl(
+                _serverAddress,
+                streamInfo.ItemId,
+                streamInfo.Container ?? mediaSource?.Container,
+                streamInfo.MediaSourceId,
+                mediaSource?.ETag)
+            : streamInfo.ToDlnaUrl(_serverAddress, _accessToken);
+
+        url = NormalizeDlnaMediaUrl(url);
+
+        writer.WriteStartElement(string.Empty, "res", NsDidl);
 
         if (mediaSource?.RunTimeTicks is not null)
         {
             writer.WriteAttributeString("duration", TimeSpan.FromTicks(mediaSource.RunTimeTicks.Value).ToString("c", CultureInfo.InvariantCulture));
         }
 
-        if (filter.Contains("res@size"))
+        if (streamInfo.PlayMethod == PlayMethod.DirectPlay && mediaSource?.Size is > 0)
+        {
+            writer.WriteAttributeString("size", mediaSource.Size.Value.ToString(CultureInfo.InvariantCulture));
+        }
+        else if (filter.Contains("res@size"))
         {
             if (streamInfo.IsDirectStream || streamInfo.EstimateContentLength)
             {
@@ -888,7 +942,7 @@ public class DidlBuilder
 
         var contentFeatures = ContentFeatureBuilder.BuildAudioHeader(
             _profile,
-            streamInfo.Container?.FirstOrDefault().ToString(),
+            streamInfo.Container,
             streamInfo.TargetAudioCodec.FirstOrDefault(),
             targetAudioBitrate,
             targetSampleRate,
@@ -1014,6 +1068,8 @@ public class DidlBuilder
         DlnaPlaybackUrlHelper.WriteSummaryPlaybackResource(
             writer,
             summary,
+            _profile,
+            config.GetEffectivePlaybackMode(),
             _serverAddress,
             config.EnableQuestCompatibilityMode,
             DlnaPlaybackUrlHelper.ShouldEnsurePlaybackUrlsInBrowse(config));

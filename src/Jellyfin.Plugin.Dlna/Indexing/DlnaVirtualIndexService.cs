@@ -4,9 +4,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Plugin.Dlna.Configuration;
+using Jellyfin.Plugin.Dlna.Model;
 using MediaBrowser.Controller.Drawing;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
+using MediaBrowser.Controller.MediaEncoding;
 using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.Dlna.Indexing;
@@ -30,13 +32,23 @@ public sealed class DlnaVirtualIndexService : IDlnaVirtualIndexService, IDisposa
         ILibraryManager libraryManager,
         IVirtualIndexStore store,
         IImageProcessor imageProcessor,
+        IMediaSourceManager mediaSourceManager,
+        IMediaEncoder mediaEncoder,
+        IDlnaManager dlnaManager,
         DlnaIndexGeneration generation,
         ILogger<DlnaVirtualIndexService> logger,
         ILoggerFactory loggerFactory)
     {
         _libraryManager = libraryManager;
         _store = store;
-        _builder = new DlnaIndexBuilder(libraryManager, store, imageProcessor, loggerFactory.CreateLogger<DlnaIndexBuilder>());
+        _builder = new DlnaIndexBuilder(
+            libraryManager,
+            store,
+            imageProcessor,
+            mediaSourceManager,
+            mediaEncoder,
+            dlnaManager,
+            loggerFactory.CreateLogger<DlnaIndexBuilder>());
         _generation = generation;
         _logger = logger;
     }
@@ -73,20 +85,61 @@ public sealed class DlnaVirtualIndexService : IDlnaVirtualIndexService, IDisposa
         await _buildLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            var library = _libraryManager.GetItemById(libraryId);
-            if (library is null || !LibraryBrowseQueryHelper.IsDlnaLibraryView(library))
-            {
-                return;
-            }
-
-            var config = DlnaPlugin.Instance.Configuration;
-            await _builder.BuildLibraryAsync(library, config, cancellationToken).ConfigureAwait(false);
-            _generation.Increment();
+            await RebuildLibraryCoreAsync(libraryId, cancellationToken).ConfigureAwait(false);
         }
         finally
         {
             _buildLock.Release();
         }
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<Guid>> TryRebuildLibrariesAsync(
+        IReadOnlyList<Guid> libraryIds,
+        CancellationToken cancellationToken)
+    {
+        if (libraryIds.Count == 0)
+        {
+            return [];
+        }
+
+        if (!await _buildLock.WaitAsync(0, cancellationToken).ConfigureAwait(false))
+        {
+            return [];
+        }
+
+        try
+        {
+            var rebuilt = new List<Guid>(libraryIds.Count);
+            foreach (var libraryId in libraryIds)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (await RebuildLibraryCoreAsync(libraryId, cancellationToken).ConfigureAwait(false))
+                {
+                    rebuilt.Add(libraryId);
+                }
+            }
+
+            return rebuilt;
+        }
+        finally
+        {
+            _buildLock.Release();
+        }
+    }
+
+    private async Task<bool> RebuildLibraryCoreAsync(Guid libraryId, CancellationToken cancellationToken)
+    {
+        var library = _libraryManager.GetItemById(libraryId);
+        if (library is null || !LibraryBrowseQueryHelper.IsDlnaLibraryView(library))
+        {
+            return false;
+        }
+
+        var config = DlnaPlugin.Instance.Configuration;
+        await _builder.BuildLibraryAsync(library, config, cancellationToken).ConfigureAwait(false);
+        _generation.Increment();
+        return true;
     }
 
     /// <inheritdoc />

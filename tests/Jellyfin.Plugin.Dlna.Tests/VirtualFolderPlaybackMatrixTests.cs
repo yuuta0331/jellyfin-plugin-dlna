@@ -6,6 +6,7 @@ using Jellyfin.Plugin.Dlna.Configuration;
 using Jellyfin.Plugin.Dlna.ContentDirectory;
 using Jellyfin.Plugin.Dlna.Didl;
 using Jellyfin.Plugin.Dlna.Indexing;
+using Jellyfin.Plugin.Dlna.Model;
 using Xunit;
 
 namespace Jellyfin.Plugin.Dlna.Tests;
@@ -19,10 +20,10 @@ public class VirtualFolderPlaybackMatrixTests
     private static readonly Guid ItemId = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
     [Theory]
-    [InlineData(BaseItemKind.Movie, "video/mp4", "/dlna/videos/")]
-    [InlineData(BaseItemKind.Episode, "video/mp4", "/dlna/videos/")]
-    [InlineData(BaseItemKind.Video, "video/mp4", "/dlna/videos/")]
-    [InlineData(BaseItemKind.MusicVideo, "video/mp4", "/dlna/videos/")]
+    [InlineData(BaseItemKind.Movie, "video/x-matroska", "/dlna/videos/")]
+    [InlineData(BaseItemKind.Episode, "video/x-matroska", "/dlna/videos/")]
+    [InlineData(BaseItemKind.Video, "video/x-matroska", "/dlna/videos/")]
+    [InlineData(BaseItemKind.MusicVideo, "video/x-matroska", "/dlna/videos/")]
     [InlineData(BaseItemKind.Audio, "audio/mpeg", "/dlna/audio/")]
     public void PlayableSummaryItem_IncludesStreamRes(BaseItemKind itemType, string protocolFragment, string urlFragment)
     {
@@ -30,8 +31,9 @@ public class VirtualFolderPlaybackMatrixTests
 
         var didl = WriteSummaryPlaybackDidl(itemType);
 
-        Assert.Contains($"protocolInfo=\"http-get:*:{protocolFragment}:*\"", didl, StringComparison.Ordinal);
+        Assert.Contains(protocolFragment, didl, StringComparison.Ordinal);
         Assert.Contains(urlFragment, didl, StringComparison.Ordinal);
+        Assert.Contains("Static=true", didl, StringComparison.Ordinal);
     }
 
     [Theory]
@@ -81,8 +83,8 @@ public class VirtualFolderPlaybackMatrixTests
 
         var didl = WriteSummaryPlaybackDidl(itemType);
 
-        Assert.DoesNotContain("protocolInfo=\"http-get:*:video/mp4:*\"", didl, StringComparison.Ordinal);
-        Assert.DoesNotContain("protocolInfo=\"http-get:*:audio/mpeg:*\"", didl, StringComparison.Ordinal);
+        Assert.DoesNotContain("stream.mkv", didl, StringComparison.Ordinal);
+        Assert.DoesNotContain("stream.mp3", didl, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -90,8 +92,8 @@ public class VirtualFolderPlaybackMatrixTests
     {
         var didl = WriteSummaryPlaybackDidl(BaseItemKind.Movie, questMode: false);
 
-        Assert.Contains("?dlnaheaders=true", didl, StringComparison.Ordinal);
-        Assert.DoesNotContain("&dlnaheaders=true", didl, StringComparison.Ordinal);
+        Assert.Contains("dlnaheaders=true", didl, StringComparison.Ordinal);
+        Assert.DoesNotContain("VideoCodec=", didl, StringComparison.Ordinal);
     }
 
     private static string WriteSummaryPlaybackDidl(BaseItemKind itemType, bool questMode = true)
@@ -100,16 +102,21 @@ public class VirtualFolderPlaybackMatrixTests
         var settings = new XmlWriterSettings { OmitXmlDeclaration = true, ConformanceLevel = ConformanceLevel.Fragment };
         using var writer = XmlWriter.Create(buffer, settings);
 
-        var summary = new ItemSummaryRecord
+        var summary = PlaybackTestSupport.CreatePlayableVideoSummary(ItemId);
+        summary.ItemType = itemType;
+        if (itemType == BaseItemKind.Audio)
         {
-            ItemId = ItemId,
-            ItemType = itemType,
-            Name = "Matrix Test Item"
-        };
+            summary.Container = "mp3";
+            summary.VideoCodec = null;
+            summary.VideoWidth = null;
+            summary.VideoHeight = null;
+        }
 
         DlnaPlaybackUrlHelper.WriteSummaryPlaybackResource(
             writer,
             summary,
+            PlaybackTestSupport.CreateProfile(),
+            DlnaPlaybackMode.Auto,
             "http://server",
             questCompatibilityMode: questMode,
             ensurePlaybackUrlsInBrowse: true);

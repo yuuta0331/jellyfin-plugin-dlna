@@ -144,8 +144,8 @@ public sealed class VirtualIndexStore : IVirtualIndexStore, IDisposable
             {
                 using var command = connection.CreateCommand();
                 command.CommandText = """
-                    INSERT INTO item_summary(library_id, item_id, item_type, name, sort_name, parent_id, production_year, date_created_ticks, premiere_date_ticks, index_number, is_folder, date_modified_ticks, primary_image_item_id, primary_image_tag, primary_width, primary_height, thumb_image_item_id, thumb_image_tag, thumb_width, thumb_height)
-                    VALUES ($library_id, $item_id, $item_type, $name, $sort_name, $parent_id, $production_year, $date_created_ticks, $premiere_date_ticks, $index_number, $is_folder, $date_modified_ticks, $primary_image_item_id, $primary_image_tag, $primary_width, $primary_height, $thumb_image_item_id, $thumb_image_tag, $thumb_width, $thumb_height)
+                    INSERT INTO item_summary(library_id, item_id, item_type, name, sort_name, parent_id, production_year, date_created_ticks, premiere_date_ticks, index_number, is_folder, date_modified_ticks, primary_image_item_id, primary_image_tag, primary_width, primary_height, thumb_image_item_id, thumb_image_tag, thumb_width, thumb_height, runtime_ticks, file_size, container, video_width, video_height, total_bitrate, video_codec, audio_codec, media_source_id, media_source_tag, supports_direct_play)
+                    VALUES ($library_id, $item_id, $item_type, $name, $sort_name, $parent_id, $production_year, $date_created_ticks, $premiere_date_ticks, $index_number, $is_folder, $date_modified_ticks, $primary_image_item_id, $primary_image_tag, $primary_width, $primary_height, $thumb_image_item_id, $thumb_image_tag, $thumb_width, $thumb_height, $runtime_ticks, $file_size, $container, $video_width, $video_height, $total_bitrate, $video_codec, $audio_codec, $media_source_id, $media_source_tag, $supports_direct_play)
                     """;
                 command.Parameters.AddWithValue("$library_id", library);
                 command.Parameters.AddWithValue("$item_id", summary.ItemId.ToString("N", CultureInfo.InvariantCulture));
@@ -167,6 +167,17 @@ public sealed class VirtualIndexStore : IVirtualIndexStore, IDisposable
                 command.Parameters.AddWithValue("$thumb_image_tag", summary.ThumbImageTag ?? (object)DBNull.Value);
                 command.Parameters.AddWithValue("$thumb_width", summary.ThumbWidth ?? (object)DBNull.Value);
                 command.Parameters.AddWithValue("$thumb_height", summary.ThumbHeight ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("$runtime_ticks", summary.RunTimeTicks ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("$file_size", summary.FileSize ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("$container", summary.Container ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("$video_width", summary.VideoWidth ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("$video_height", summary.VideoHeight ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("$total_bitrate", summary.TotalBitrate ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("$video_codec", summary.VideoCodec ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("$audio_codec", summary.AudioCodec ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("$media_source_id", summary.MediaSourceId ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("$media_source_tag", summary.MediaSourceTag ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("$supports_direct_play", summary.SupportsDirectPlay ? 1 : 0);
                 command.ExecuteNonQuery();
             }
 
@@ -203,7 +214,7 @@ public sealed class VirtualIndexStore : IVirtualIndexStore, IDisposable
 
 #pragma warning disable CA2100
                 command.CommandText = $"""
-                    SELECT item_id, item_type, name, sort_name, parent_id, production_year, date_created_ticks, premiere_date_ticks, index_number, is_folder, date_modified_ticks, primary_image_item_id, primary_image_tag, primary_width, primary_height, thumb_image_item_id, thumb_image_tag, thumb_width, thumb_height
+                    SELECT item_id, item_type, name, sort_name, parent_id, production_year, date_created_ticks, premiere_date_ticks, index_number, is_folder, date_modified_ticks, primary_image_item_id, primary_image_tag, primary_width, primary_height, thumb_image_item_id, thumb_image_tag, thumb_width, thumb_height, runtime_ticks, file_size, container, video_width, video_height, total_bitrate, video_codec, audio_codec, media_source_id, media_source_tag, supports_direct_play
                     FROM item_summary
                     WHERE library_id = $library_id AND item_id IN ({string.Join(',', placeholders)})
                     """;
@@ -240,7 +251,18 @@ public sealed class VirtualIndexStore : IVirtualIndexStore, IDisposable
                         ThumbImageItemId = ReadOptionalGuid(reader, 15),
                         ThumbImageTag = reader.IsDBNull(16) ? null : reader.GetString(16),
                         ThumbWidth = reader.IsDBNull(17) ? null : reader.GetInt32(17),
-                        ThumbHeight = reader.IsDBNull(18) ? null : reader.GetInt32(18)
+                        ThumbHeight = reader.IsDBNull(18) ? null : reader.GetInt32(18),
+                        RunTimeTicks = reader.IsDBNull(19) ? null : reader.GetInt64(19),
+                        FileSize = reader.IsDBNull(20) ? null : reader.GetInt64(20),
+                        Container = reader.IsDBNull(21) ? null : reader.GetString(21),
+                        VideoWidth = reader.IsDBNull(22) ? null : reader.GetInt32(22),
+                        VideoHeight = reader.IsDBNull(23) ? null : reader.GetInt32(23),
+                        TotalBitrate = reader.IsDBNull(24) ? null : reader.GetInt32(24),
+                        VideoCodec = reader.IsDBNull(25) ? null : reader.GetString(25),
+                        AudioCodec = reader.IsDBNull(26) ? null : reader.GetString(26),
+                        MediaSourceId = reader.IsDBNull(27) ? null : reader.GetString(27),
+                        MediaSourceTag = reader.IsDBNull(28) ? null : reader.GetString(28),
+                        SupportsDirectPlay = !reader.IsDBNull(29) && reader.GetInt32(29) != 0
                     };
                 }
             }
@@ -427,6 +449,17 @@ public sealed class VirtualIndexStore : IVirtualIndexStore, IDisposable
             EnsureColumn(connection, "item_summary", "thumb_image_tag", "TEXT NULL");
             EnsureColumn(connection, "item_summary", "thumb_width", "INTEGER NULL");
             EnsureColumn(connection, "item_summary", "thumb_height", "INTEGER NULL");
+            EnsureColumn(connection, "item_summary", "runtime_ticks", "INTEGER NULL");
+            EnsureColumn(connection, "item_summary", "file_size", "INTEGER NULL");
+            EnsureColumn(connection, "item_summary", "container", "TEXT NULL");
+            EnsureColumn(connection, "item_summary", "video_width", "INTEGER NULL");
+            EnsureColumn(connection, "item_summary", "video_height", "INTEGER NULL");
+            EnsureColumn(connection, "item_summary", "total_bitrate", "INTEGER NULL");
+            EnsureColumn(connection, "item_summary", "video_codec", "TEXT NULL");
+            EnsureColumn(connection, "item_summary", "audio_codec", "TEXT NULL");
+            EnsureColumn(connection, "item_summary", "media_source_id", "TEXT NULL");
+            EnsureColumn(connection, "item_summary", "media_source_tag", "TEXT NULL");
+            EnsureColumn(connection, "item_summary", "supports_direct_play", "INTEGER NOT NULL DEFAULT 0");
             ExecuteNonQuery(connection, """
                 CREATE TABLE IF NOT EXISTS virtual_list(
                     library_id TEXT NOT NULL,

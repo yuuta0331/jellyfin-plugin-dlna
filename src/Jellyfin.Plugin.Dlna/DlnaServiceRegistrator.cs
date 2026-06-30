@@ -88,6 +88,9 @@ public class DlnaServiceRegistrator : IPluginServiceRegistrator
         serviceCollection.AddSingleton<IBrowseNodeCache, BrowseNodeCache>();
         serviceCollection.AddSingleton<ChildCountCache>();
         serviceCollection.AddSingleton<DlnaIndexGeneration>();
+        serviceCollection.AddSingleton<DlnaServerLoadGuard>();
+        serviceCollection.AddSingleton<DlnaIndexRebuildCoordinator>();
+        serviceCollection.AddSingleton<IDlnaIndexRebuildCoordinator>(provider => provider.GetRequiredService<DlnaIndexRebuildCoordinator>());
         serviceCollection.AddSingleton<IVirtualIndexStore, VirtualIndexStore>();
         serviceCollection.AddSingleton<IDlnaVirtualIndexService, DlnaVirtualIndexService>();
         serviceCollection.AddSingleton<IDlnaBrowsePrewarmService, DlnaBrowsePrewarmService>();
@@ -95,8 +98,10 @@ public class DlnaServiceRegistrator : IPluginServiceRegistrator
         serviceCollection.AddSingleton<IContentInvalidationService, ContentInvalidationService>();
         serviceCollection.AddSingleton<IDlnaStorageMaintenanceService, DlnaStorageMaintenanceService>();
         serviceCollection.AddSingleton<IScheduledTask, RebuildDlnaQuestIndexTask>();
+        serviceCollection.AddSingleton<IScheduledTask, DlnaScheduledPrewarmTask>();
         serviceCollection.AddSingleton<LibraryChangeNotifier>();
         serviceCollection.AddHostedService(provider => provider.GetRequiredService<LibraryChangeNotifier>());
+        serviceCollection.AddHostedService(provider => provider.GetRequiredService<DlnaIndexRebuildCoordinator>());
         serviceCollection.AddHostedService<DlnaIndexWarmupService>();
         serviceCollection.AddHostedService<DlnaPluginConfigurationMonitor>();
         serviceCollection.AddHostedService<DlnaDebugLoggingInitializer>();

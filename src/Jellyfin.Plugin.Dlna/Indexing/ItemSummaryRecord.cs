@@ -103,6 +103,61 @@ public sealed class ItemSummaryRecord
     /// Gets or sets the thumbnail image height.
     /// </summary>
     public int? ThumbHeight { get; set; }
+
+    /// <summary>
+    /// Gets or sets the media runtime in ticks.
+    /// </summary>
+    public long? RunTimeTicks { get; set; }
+
+    /// <summary>
+    /// Gets or sets the media file size in bytes.
+    /// </summary>
+    public long? FileSize { get; set; }
+
+    /// <summary>
+    /// Gets or sets the media container (mkv, mp4, etc.).
+    /// </summary>
+    public string? Container { get; set; }
+
+    /// <summary>
+    /// Gets or sets the video width.
+    /// </summary>
+    public int? VideoWidth { get; set; }
+
+    /// <summary>
+    /// Gets or sets the video height.
+    /// </summary>
+    public int? VideoHeight { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total media bitrate.
+    /// </summary>
+    public int? TotalBitrate { get; set; }
+
+    /// <summary>
+    /// Gets or sets the primary video codec.
+    /// </summary>
+    public string? VideoCodec { get; set; }
+
+    /// <summary>
+    /// Gets or sets the primary audio codec.
+    /// </summary>
+    public string? AudioCodec { get; set; }
+
+    /// <summary>
+    /// Gets or sets the media source id.
+    /// </summary>
+    public string? MediaSourceId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the media source etag.
+    /// </summary>
+    public string? MediaSourceTag { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether direct play is supported for the indexed profile.
+    /// </summary>
+    public bool SupportsDirectPlay { get; set; }
 }
 
 /// <summary>
