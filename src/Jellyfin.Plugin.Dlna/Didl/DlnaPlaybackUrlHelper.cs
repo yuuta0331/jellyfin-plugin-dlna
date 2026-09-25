@@ -310,6 +310,7 @@ public static class DlnaPlaybackUrlHelper
             null,
             0,
             null,
+            null,
             null).FirstOrDefault() ?? "DLNA.ORG_OP=01;DLNA.ORG_CI=0";
 
         writer.WriteAttributeString("protocolInfo", string.Format(CultureInfo.InvariantCulture, "http-get:*:{0}:{1}", mimeType, contentFeatures));

@@ -32,12 +32,13 @@ Official upstream: [jellyfin/jellyfin-plugin-dlna](https://github.com/jellyfin/j
 
 ## Changes compared to the official plugin
 
-This fork targets **Jellyfin 10.11.x** and focuses on DLNA Browse performance, device compatibility (especially Meta Quest), and usability improvements.
+This fork targets **Jellyfin 12.0+** starting with plugin version **13.0.0**, while preserving the fork's DLNA Browse performance, device compatibility (especially Meta Quest), and usability improvements.
 
 ### Compatibility
 
-- Pinned Jellyfin API packages to **10.11.10** for stable loading on 10.11.x servers
-- `targetAbi` set to **10.11.0.0** for broader 10.11.x support
+- Jellyfin API packages pinned to **12.0.0** for the Jellyfin 12 compatibility baseline
+- `targetAbi` set to **12.0.0.0**
+- Previous **10.11.x-compatible 12.x plugin releases remain separate** for older servers
 
 ### DLNA Browse performance
 
@@ -72,8 +73,8 @@ This fork targets **Jellyfin 10.11.x** and focuses on DLNA Browse performance, d
 
 ## Requirements
 
-- Jellyfin **10.11.0** or newer
-- .NET **9.0** (server runtime; no separate install needed for end users)
+- Jellyfin **12.0** or newer
+- .NET **10.0** (server runtime; no separate install needed for end users)
 
 ## License
 

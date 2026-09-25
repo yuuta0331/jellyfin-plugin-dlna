@@ -70,7 +70,6 @@ public class DlnaServiceRegistrator : IPluginServiceRegistrator
         serviceCollection.AddSingleton<IMediaReceiverRegistrar, MediaReceiverRegistrarService>();
 
         serviceCollection.AddScoped<AudioHelper>();
-        serviceCollection.AddScoped<DynamicHlsHelper>();
 
         serviceCollection.AddSingleton<ISsdpCommunicationsServer>(provider =>
         {

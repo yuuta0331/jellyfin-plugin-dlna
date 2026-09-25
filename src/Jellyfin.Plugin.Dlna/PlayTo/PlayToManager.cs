@@ -241,7 +241,7 @@ public sealed class PlayToManager : IDisposable
             var profile = _dlnaManager.GetProfile(device.Properties.ToDeviceIdentification()) ??
                           _dlnaManager.GetDefaultProfile();
 
-            _sessionManager.ReportCapabilities(sessionInfo.Id, new ClientCapabilities
+            _sessionManager.ReportCapabilities(null, sessionInfo.Id, new ClientCapabilities
             {
                 PlayableMediaTypes = profile.FetchSupportedMediaTypes(),
 
